@@ -1,6 +1,6 @@
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase/config';
-import { getPlayerProfile } from './firebase/playerData';
+import { getPlayerProfile, savePlayerProfile } from './firebase/playerData';
 import { CharacterUI } from './ui/CharacterUI';
 import { DailyMoodUI } from './ui/DailyMoodUI';
 import { MainHUD } from './ui/MainHUD';
@@ -18,7 +18,7 @@ function initGame() {
         if (isInitializing) return;
 
         if (user) {
-            // 已經有登入身分（可能是舊玩家重新整理，或剛註冊完）
+            // 已有登入身分（可能是舊玩家重新整理，或剛註冊完）
             isInitializing = true;
             currentGlobalUid = user.uid;
             console.log('已辨識旅人身分，UID:', currentGlobalUid);
@@ -70,11 +70,37 @@ async function loadPlayerProfileFlow(currentUid: string) {
     }
 }
 
-// 啟動每日心境流程
-function startDailyMoodFlow(currentUid: string, profile: any) {
-    new DailyMoodUI(currentUid, profile, (mood, item) => {
+// 啟動每日心境流程（包含：記錄簽到日期、道具存入背包、寫入 Firebase）
+async function startDailyMoodFlow(currentUid: string, profile: any) {
+    new DailyMoodUI(currentUid, profile, async (mood, item) => {
         profile.mood = mood;
         profile.item = item;
+        
+        // 1. 記錄今日簽到日期
+        const todayStr = new Date().toISOString().split('T')[0];
+        profile.lastMoodDate = todayStr;
+
+        // 2. 將選中的隨身道具加入背包 (inventory)
+        if (!profile.inventory) {
+            profile.inventory = [];
+        }
+
+        const existingItem = profile.inventory.find((i: any) => i.id === item);
+        if (existingItem) {
+            existingItem.count = (existingItem.count || 1) + 1; // 已有該道具則數量 +1
+        } else {
+            profile.inventory.push({ id: item, count: 1 });     // 沒有則新增
+        }
+
+        // 3. 儲存最新狀態到 Firebase 資料庫
+        try {
+            await savePlayerProfile(currentUid, profile);
+            console.log('今日心境與道具已成功存入背包與資料庫！');
+        } catch (error) {
+            console.error('儲存每日心境失敗:', error);
+        }
+
+        // 進入遊戲主畫面
         launchMainHUD(currentUid, profile);
     });
 }
