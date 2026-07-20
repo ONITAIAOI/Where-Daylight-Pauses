@@ -180,10 +180,10 @@ export class ChatUI {
             const text = inputField.value.trim();
             if (!text) return;
 
-            // 🌟 嚴格確保發送時帶入當前實例的正確 UID
-            const senderUid = this.uid;
-            if (!senderUid) {
-                console.error('錯誤：找不到發送者的 UID！');
+            // 🌟 嚴格確保使用當前例項中正確的 Authentication UID
+            const realUid = this.uid;
+            if (!realUid) {
+                console.error('錯誤：找不到有效的 UID');
                 alert('身分驗證異常，請重新整理網頁。');
                 return;
             }
@@ -193,7 +193,7 @@ export class ChatUI {
 
             try {
                 await addDoc(collection(db, 'chats'), {
-                    uid: senderUid,
+                    uid: realUid, // 絕對對應的使用者 UID
                     nickname: this.profile.nickname || '神秘旅人',
                     avatarColor: this.profile.avatarColor || '#eab308',
                     chatSkin: (this.profile as any).equippedChatSkin || 'default',
@@ -233,7 +233,7 @@ export class ChatUI {
             snapshot.forEach((docSnap) => {
                 const msg = docSnap.data() as ChatMessage;
                 
-                // 🌟 精準比對：訊息裡的 uid 是否等於當前登入使用者的 uid
+                // 🌟 比對訊息中的 uid 與當前登入使用者的 uid
                 const isMe = msg.uid === this.uid;
                 
                 let timeStr = '';
@@ -264,7 +264,7 @@ export class ChatUI {
                         </div>
                     `;
                 } else {
-                    // 🌟 別人的訊息：靠左側顯示，並清楚標示對方的暱稱與其專屬代表色
+                    // 🌟 別人的訊息：靠左側顯示，並標示對方的暱稱與其專屬代表色
                     html += `
                         <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; width: 100%;">
                             <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
