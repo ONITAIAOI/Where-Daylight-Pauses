@@ -1,3 +1,4 @@
+import { db } from '../firebase/config';
 import { 
     collection, 
     addDoc, 
@@ -5,147 +6,117 @@ import {
     orderBy, 
     limit, 
     onSnapshot, 
-    serverTimestamp,
-    Timestamp 
+    serverTimestamp, 
+    getDocs, 
+    deleteDoc, 
+    doc 
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { PlayerProfile } from '../firebase/playerData';
 
-export interface ChatMessage {
-    id?: string;
-    uid: string;
-    nickname: string;
-    avatarColor: string;
-    chatSkin?: string;
-    text: string;
-    createdAt: Timestamp | Date | any;
-}
-
-const CHAT_SKINS: Record<string, { bubble: string; text: string }> = {
-    default: {
-        bubble: 'background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #1c1714; box-shadow: 0 4px 12px rgba(234, 179, 8, 0.2); font-weight: 500;',
-        text: ''
-    },
-    gold_luxury: {
-        bubble: 'background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%); color: #422006; border: 1px solid #fef08a; box-shadow: 0 0 15px rgba(254, 240, 138, 0.5); font-weight: 700;',
-        text: 'letter-spacing: 0.5px;'
-    },
-    starry_night: {
-        bubble: 'background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #e0e7ff; border: 1px solid #818cf8; box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3); font-weight: 500;',
-        text: ''
-    }
-};
-
 export class ChatUI {
-    private uid: string;
+    private authUid: string;
     private profile: PlayerProfile;
+    private onClose: () => void;
     private container: HTMLDivElement | null = null;
     private unsubscribe: (() => void) | null = null;
-    private onClose: () => void;
+    
+    // 🌟 固定聊天室 ID（所有人都共用這一個大廳，不會在 chats 產生一堆亂數檔案）
+    private currentChatId: string = 'town_square';
 
-    constructor(uid: string, profile: PlayerProfile, onClose: () => void) {
-        this.uid = uid;
+    constructor(authUid: string, profile: PlayerProfile, onClose: () => void) {
+        this.authUid = authUid;
         this.profile = profile;
         this.onClose = onClose;
 
-        // 🚨 終極除錯：在 F12 主控台印出當前例項拿到的真實 UID 與 暱稱
-        console.log(`[ChatUI 初始化] 當前身分 UID: "${this.uid}" | 暱稱: "${this.profile.nickname}"`);
-
+        this.injectStyles();
         this.render();
-        this.listenToMessages();
+        this.listenMessages();
+    }
+
+    private injectStyles() {
+        if (!document.getElementById('chat-ui-styles')) {
+            const style = document.createElement('style');
+            style.id = 'chat-ui-styles';
+            style.innerHTML = `
+                @keyframes chatFadeIn {
+                    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                .chat-message-bubble {
+                    max-width: 75%;
+                    padding: 10px 14px;
+                    border-radius: 12px;
+                    font-size: 13px;
+                    line-height: 1.4;
+                    word-break: break-all;
+                }
+            `;
+            document.head.appendChild(style);
+        }
     }
 
     private render() {
-        this.remove();
-
         this.container = document.createElement('div');
-        this.container.id = 'chat-ui-container';
         this.container.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(135deg, #1f1a17 0%, #12100e 100%);
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px; box-sizing: border-box;
-            animation: hudFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 16px; box-sizing: border-box;
         `;
 
         this.container.innerHTML = `
             <div style="
-                background: #1c1714;
-                border: 1px solid rgba(234, 179, 8, 0.2);
-                border-radius: 24px; width: 100%; max-width: 500px;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-                color: #f3f0ea; overflow: hidden;
-                box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 92vh; height: 85vh;
+                background: #1c1714; border: 1px solid rgba(234, 179, 8, 0.3);
+                border-radius: 20px; width: 100%; max-width: 440px; height: 85vh;
+                max-height: 600px; display: flex; flex-direction: column;
+                box-shadow: 0 20px 50px rgba(0,0,0,0.7); overflow: hidden;
+                animation: chatFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             ">
+                <!-- 標題列 -->
                 <div style="
-                    position: relative; height: 140px; min-height: 140px;
-                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.4) 50%, #1c1714 100%), 
-                                url('./assets/images/main.png') center/cover no-repeat;
-                    display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 20px 24px; box-sizing: border-box;
-                    overflow: hidden; border-top-left-radius: 24px; border-top-right-radius: 24px;
+                    padding: 16px 20px; background: rgba(28, 23, 20, 0.95);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    display: flex; justify-content: space-between; align-items: center;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 16px;">💬</span>
-                            <span style="font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">鎮民廣場</span>
-                        </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <div style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 20px;
-                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
-                                font-size: 11px; font-weight: 600; color: #fde047;
-                            ">
-                                <span>☀️</span> <span>${this.profile.sunCoins ?? 100}</span>
-                            </div>
-                            <button id="btn-close-chat" style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(255, 255, 255, 0.2); color: #f3f0ea;
-                                width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-                                display: flex; align-items: center; justify-content: center;
-                                font-size: 12px; transition: all 0.2s;
-                            ">✕</button>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">💬</span>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: #fff;">鎮民廣場</div>
+                            <div style="font-size: 11px; color: #a89f91;">與歇腳的旅人對話 (顯示最近 20 則)</div>
                         </div>
                     </div>
-                    <div style="z-index: 1;">
-                        <div style="font-size: 10px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
-                            TOWNSFOLK PLAZA
-                        </div>
-                        <div style="font-size: 12px; color: #d1c7bd; text-shadow: 0 1px 3px rgba(0,0,0,0.6);">
-                            與所有駐足小鎮的旅人交流心境，留下溫暖的足跡
-                        </div>
+                    <button id="btn-close-chat" style="
+                        background: none; border: none; color: #a89f91; font-size: 18px;
+                        cursor: pointer; padding: 4px 8px; border-radius: 6px;
+                    ">✕</button>
+                </div>
+
+                <!-- 訊息顯示區 -->
+                <div id="chat-messages-area" style="
+                    flex: 1; padding: 16px; overflow-y: auto; display: flex;
+                    flex-direction: column; gap: 12px; background: #15110e;
+                ">
+                    <div style="text-align: center; color: #6b635b; font-size: 12px; margin-top: 10px;">
+                        正在連接鎮民廣場...
                     </div>
                 </div>
 
-                <div id="chat-messages-scroll" style="
-                    flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
-                    scroll-behavior: smooth; background: #1c1714;
-                ">
-                    <div style="text-align: center; color: #8c8175; font-size: 12px; margin: 10px 0;">
-                        ✨ 歡迎來到鎮民廣場，請保持溫暖與禮貌。
-                    </div>
-                </div>
-
+                <!-- 輸入送出區 -->
                 <div style="
-                    padding: 16px 22px; background: rgba(28, 23, 20, 0.95);
-                    border-top: 1px solid rgba(234, 179, 8, 0.15);
-                    display: flex; gap: 10px; align-items: center;
+                    padding: 14px 16px; background: rgba(28, 23, 20, 0.95);
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
+                    display: flex; gap: 10px;
                 ">
-                    <input type="text" id="chat-input-text" placeholder="寫下想說的話..." maxlength="150" style="
-                        flex: 1; background: rgba(255, 255, 255, 0.04);
-                        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
-                        padding: 12px 16px; color: #fff; font-size: 13px; outline: none;
-                        transition: border-color 0.2s;
-                    " />
-                    <button id="btn-send-chat" style="
-                        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
-                        color: #1c1714; border: none; border-radius: 12px;
-                        padding: 12px 20px; font-weight: 700; font-size: 13px;
-                        cursor: pointer; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
-                        transition: transform 0.1s, opacity 0.2s;
+                    <input type="text" id="chat-input-box" placeholder="說點溫暖的話吧..." style="
+                        flex: 1; background: rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;
+                        padding: 10px 14px; color: #fff; font-size: 13px; outline: none;
+                    ">
+                    <button id="btn-send-message" style="
+                        background: #eab308; color: #1c1714; border: none; border-radius: 10px;
+                        padding: 0 16px; font-weight: 600; font-size: 13px; cursor: pointer;
+                        transition: opacity 0.2s;
                     ">發送</button>
                 </div>
             </div>
@@ -157,131 +128,167 @@ export class ChatUI {
 
     private bindEvents() {
         const closeBtn = document.getElementById('btn-close-chat');
-        closeBtn?.addEventListener('click', () => this.remove());
+        const sendBtn = document.getElementById('btn-send-message');
+        const inputbox = document.getElementById('chat-input-box') as HTMLInputElement;
 
-        const containerBg = this.container;
-        containerBg?.addEventListener('click', (e) => {
-            if (e.target === containerBg) {
-                this.remove();
-            }
+        closeBtn?.addEventListener('click', () => this.remove());
+        this.container?.addEventListener('click', (e) => {
+            if (e.target === this.container) this.remove();
         });
 
-        const sendBtn = document.getElementById('btn-send-chat');
-        const inputField = document.getElementById('chat-input-text') as HTMLInputElement;
-
-        const handleSend = async () => {
-            if (!inputField) return;
-            const text = inputField.value.trim();
+        const handleSend = () => {
+            const text = inputbox.value.trim();
             if (!text) return;
-
-            sendBtn?.setAttribute('disabled', 'true');
-            inputField.value = '';
-
-            try {
-                // 🌟 發送時，嚴格將這台機器的真實 UID 寫入資料庫
-                await addDoc(collection(db, 'chats'), {
-                    uid: this.uid, 
-                    nickname: this.profile.nickname || '神秘旅人',
-                    avatarColor: this.profile.avatarColor || '#eab308',
-                    chatSkin: (this.profile as any).equippedChatSkin || 'default',
-                    text: text,
-                    createdAt: serverTimestamp()
-                });
-            } catch (error) {
-                console.error('發送聊天訊息失敗:', error);
-                alert('發送訊息失敗，請檢查網路連線或 Firebase 規則');
-            } finally {
-                sendBtn?.removeAttribute('disabled');
-                inputField.focus();
-            }
+            this.sendMessage(text);
+            inputbox.value = '';
         };
 
         sendBtn?.addEventListener('click', handleSend);
-        inputField?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                handleSend();
-            }
+        inputbox?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSend();
         });
     }
 
-    private listenToMessages() {
-        const q = query(collection(db, 'chats'), orderBy('createdAt', 'asc'), limit(50));
+    private listenMessages() {
+        // 🌟 正確路徑：固定讀取 chats/town_square 底下的 messages
+        const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
+        
+        // 🌟 關鍵優化：只抓取最新 20 筆訊息（依時間降序排列再反轉，確保畫面上最新在下方）
+        const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(20));
 
         this.unsubscribe = onSnapshot(q, (snapshot) => {
-            const scrollArea = document.getElementById('chat-messages-scroll');
-            if (!scrollArea) return;
-
-            let html = `
-                <div style="text-align: center; color: #8c8175; font-size: 12px; margin: 10px 0;">
-                    ✨ 歡迎來到鎮民廣場，請保持溫暖與禮貌。
-                </div>
-            `;
-
-            snapshot.forEach((docSnap) => {
-                const msg = docSnap.data() as ChatMessage;
-                
-                // 🌟 嚴格比對：只有當訊息裡的 uid 等於當前實例的 uid 時，才判定為「我」
-                const isMe = msg.uid === this.uid;
-                
-                let timeStr = '';
-                if (msg.createdAt && typeof msg.createdAt.toDate === 'function') {
-                    const date = msg.createdAt.toDate();
-                    timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-                } else {
-                    timeStr = '剛剛';
-                }
-
-                const skinKey = msg.chatSkin && CHAT_SKINS[msg.chatSkin] ? msg.chatSkin : 'default';
-                const skinConfig = CHAT_SKINS[skinKey];
-
-                if (isMe) {
-                    html += `
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; width: 100%;">
-                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
-                                我 · ${timeStr}
-                            </div>
-                            <div style="
-                                ${skinConfig.bubble}
-                                padding: 10px 14px; border-radius: 14px 14px 2px 14px;
-                                max-width: 75%; word-break: break-word; font-size: 13px; line-height: 1.4;
-                                ${skinConfig.text}
-                            ">${this.escapeHtml(msg.text)}</div>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; width: 100%;">
-                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
-                                <span style="color: ${msg.avatarColor || '#eab308'}; font-weight: 600;">${this.escapeHtml(msg.nickname || '神秘旅人')}</span> · ${timeStr}
-                            </div>
-                            <div style="
-                                background: rgba(255, 255, 255, 0.08);
-                                color: #f3f0ea;
-                                padding: 10px 14px; border-radius: 14px 14px 14px 2px;
-                                max-width: 75%; word-break: break-word; font-size: 13px; line-height: 1.4;
-                                border: 1px solid rgba(255, 255, 255, 0.1);
-                            ">${this.escapeHtml(msg.text)}</div>
-                        </div>
-                    `;
-                }
+            const rawMessages: any[] = [];
+            snapshot.forEach((doc) => {
+                rawMessages.push({ id: doc.id, ...doc.data() });
             });
 
-            scrollArea.innerHTML = html;
-            scrollArea.scrollTop = scrollArea.scrollHeight;
+            // 反轉順序，讓最舊的在上面、最新的在下面
+            const messages = rawMessages.reverse();
+            this.renderMessages(messages);
+
+            // 🌟 附加安全機制：當伺服器端抓回來的總數大於 30 則時，自動背景清理超出的舊訊息
+            if (snapshot.size > 30) {
+                this.cleanOldMessages();
+            }
         }, (error) => {
-            console.error('監聽聊天訊息失敗:', error);
+            console.error('監聽聊天室失敗:', error);
         });
     }
 
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    private renderMessages(messages: any[]) {
+        const area = document.getElementById('chat-messages-area');
+        if (!area) return;
+
+        if (messages.length === 0) {
+            area.innerHTML = `
+                <div style="text-align: center; color: #6b635b; font-size: 12px; margin-top: 20px;">
+                    廣場目前靜悄悄的，留下第一句話吧～
+                </div>
+            `;
+            return;
+        }
+
+        area.innerHTML = '';
+        messages.forEach((msg) => {
+            const isMe = msg.uid === this.authUid;
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `
+                display: flex; flex-direction: column;
+                align-items: ${isMe ? 'flex-end' : 'flex-start'};
+                width: 100%;
+            `;
+
+            // 發言者暱稱
+            const nameTag = document.createElement('div');
+            nameTag.style.cssText = `font-size: 11px; color: #8c8275; margin-bottom: 2px; padding: 0 4px;`;
+            nameTag.textContent = msg.nickname || '善意旅人';
+
+            // 訊息泡泡本體
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-message-bubble';
+            bubble.style.cssText += `
+                background: ${isMe ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255, 255, 255, 0.04)'};
+                border: 1px solid ${isMe ? 'rgba(234, 179, 8, 0.3)' : 'rgba(255, 255, 255, 0.06)'};
+                color: ${isMe ? '#fde047' : '#f3f0ea'};
+            `;
+            bubble.textContent = msg.text;
+
+            wrapper.appendChild(nameTag);
+            wrapper.appendChild(bubble);
+            area.appendChild(wrapper);
+        });
+
+        // 自動捲動到最底部
+        area.scrollTop = area.scrollHeight;
+    }
+
+    private async sendMessage(text: string) {
+        try {
+            const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
+            await addDoc(messagesRef, {
+                uid: this.authUid,
+                nickname: this.profile.nickname || '善意旅人',
+                avatarColor: (this.profile as any).avatarColor || '#eab308',
+                text: text,
+                timestamp: serverTimestamp() // 讓 Firebase 記錄伺服器精準時間
+            });
+        } catch (error) {
+            console.error('發送訊息失敗:', error);
+        }
+    }
+
+    /**
+     * 🌟 定期清理機制：
+     * 當訊息累積過多時，在背景自動刪除最舊的訊息。
+     * 具有安全時間鎖：絕不刪除 5 分鐘之內發送的訊息，保護剛發言完的使用者。
+     */
+    private async cleanOldMessages() {
+        try {
+            const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
+            // 抓出歷史全部訊息，照時間由舊到新排序
+            const q = query(messagesRef, orderBy('timestamp', 'asc'));
+            const snapshot = await getDocs(q);
+
+            const docs = snapshot.docs;
+            // 如果總數未超過 30 則，不需要清理
+            if (docs.length <= 30) return;
+
+            // 計算需要被清理的超額數量
+            const excessCount = docs.length - 20; 
+            let deletedCount = 0;
+
+            const now = Date.now();
+            const FIVE_MINUTES = 5 * 60 * 1000;
+
+            for (let i = 0; i < docs.length && deletedCount < excessCount; i++) {
+                const docSnap = docs[i];
+                const data = docSnap.data();
+                const timestamp = data.timestamp;
+
+                if (timestamp && typeof timestamp.toMillis === 'function') {
+                    const msgTime = timestamp.toMillis();
+                    // 🛡️ 安全鎖：如果這則訊息在 5 分鐘之內，絕對跳過不刪除！
+                    if (now - msgTime < FIVE_MINUTES) {
+                        continue;
+                    }
+                }
+
+                // 執行刪除過期舊訊息
+                await deleteDoc(doc(db, 'chats', this.currentChatId, 'messages', docSnap.id));
+                deletedCount++;
+            }
+
+            if (deletedCount > 0) {
+                console.log(`🧹 系統背景清理完成，已安全移除 ${deletedCount} 則過期舊訊息。`);
+            }
+        } catch (error) {
+            console.error('自動清理舊訊息時發生錯誤:', error);
+        }
     }
 
     public remove() {
         if (this.unsubscribe) {
-            this.unsubscribe();
+            this.unsubscribe(); // 關閉即時監聽，節省流量
             this.unsubscribe = null;
         }
         if (this.container) {
