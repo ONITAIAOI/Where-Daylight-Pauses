@@ -1,4 +1,4 @@
-import { PlayerProfile, savePlayerProfile } from '../firebase/playerData';
+import { PlayerProfile, savePlayerProfile, checkNicknameExists } from '../firebase/playerData';
 
 export class CharacterUI {
     private uid: string;
@@ -110,7 +110,7 @@ export class CharacterUI {
                         " />
                     </div>
 
-                    <!-- 光暈主題色選擇 (改用 CSS Grid 固定為完美的 5x2 網格排列) -->
+                    <!-- 光暈主題色選擇 -->
                     <div>
                         <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 12px;">專屬代表色</label>
                         <div style="
@@ -152,19 +152,16 @@ export class CharacterUI {
     private bindEvents() {
         const nicknameInput = document.getElementById('char-input-nickname') as HTMLInputElement;
 
-        // 輸入框 Focus 邊框高亮
         if (nicknameInput) {
             nicknameInput.onfocus = () => { nicknameInput.style.borderColor = '#ffb703'; };
             nicknameInput.onblur = () => { nicknameInput.style.borderColor = 'rgba(255, 255, 255, 0.12)'; };
         }
 
-        // 點擊顏色選擇：僅動態更新 DOM 與大頭像光暈，不全頁重新渲染
         document.querySelectorAll('.char-color-dot').forEach(dot => {
             dot.addEventListener('click', (e) => {
                 const target = e.currentTarget as HTMLElement;
                 this.selectedColor = target.getAttribute('data-color') || '#ffb703';
 
-                // 更新顏色點點高亮
                 document.querySelectorAll('.char-color-dot').forEach(d => {
                     const el = d as HTMLElement;
                     const c = el.getAttribute('data-color');
@@ -174,7 +171,6 @@ export class CharacterUI {
                     el.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
                 });
 
-                // 即時更新頭像外框與光暈
                 const avatar = document.getElementById('char-avatar-preview');
                 if (avatar) {
                     avatar.style.borderColor = this.selectedColor;
@@ -189,7 +185,7 @@ export class CharacterUI {
             submitBtn.onclick = async () => {
                 const nickname = nicknameInput.value.trim();
 
-                // 驗證：若暱稱未填寫，觸發 Toast 提示與紅框警告
+                // 1. 驗證：若未填寫
                 if (!nickname) {
                     nicknameInput.style.borderColor = '#ff4d4f';
                     nicknameInput.focus();
@@ -197,26 +193,38 @@ export class CharacterUI {
                     return;
                 }
 
-                // 鎖定按鈕防止重複點擊
                 submitBtn.disabled = true;
-                submitBtn.innerText = '正在建立名片...';
+                submitBtn.innerText = '正在檢查名稱...';
                 submitBtn.style.opacity = '0.7';
 
-                const profile: PlayerProfile = {
-                    nickname: nickname,
-                    avatarColor: this.selectedColor,
-                    mood: '平安沉靜',
-                    item: '暖心熱茶',
-                    sunCoins: 100,         // ☀️ 初始暖陽幣
-                    memorialTokens: 10,     // 🌟 初始紀念章
-                    createdAt: new Date().toISOString()
-                };
-
                 try {
-                    // 儲存至 Firebase
+                    // 🌟 2. 驗證：檢查重複暱稱
+                    const isTaken = await checkNicknameExists(nickname);
+                    if (isTaken) {
+                        nicknameInput.style.borderColor = '#ff4d4f';
+                        nicknameInput.focus();
+                        this.showToast('⚠️ 這個名字已經被其他旅人佔用了，換個名字吧！');
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = '開啟停靠之旅 ➔';
+                        submitBtn.style.opacity = '1';
+                        return;
+                    }
+
+                    submitBtn.innerText = '正在建立名片...';
+
+                    const profile: PlayerProfile = {
+                        nickname: nickname,
+                        avatarColor: this.selectedColor,
+                        mood: '平安沉靜',
+                        item: '暖心熱茶',
+                        sunCoins: intializeCoins(), // 如不需要可直接帶 100
+                        memorialTokens: 10,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    // 3. 儲存至 Firebase
                     await savePlayerProfile(this.uid, profile);
 
-                    // 關閉創角介面並進入遊戲
                     this.remove();
                     this.onComplete(profile);
                 } catch (error) {
@@ -230,7 +238,6 @@ export class CharacterUI {
         }
     }
 
-    // 右上角滑出 Toast 提示
     private showToast(message: string) {
         const toastContainer = document.getElementById('toast-container');
         if (!toastContainer) return;
@@ -252,14 +259,11 @@ export class CharacterUI {
             display: flex; align-items: center; gap: 8px;
         `;
         toast.innerHTML = `<span>${message}</span>`;
-
         toastContainer.appendChild(toast);
 
         setTimeout(() => {
             toast.style.animation = 'toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
+            setTimeout(() => { toast.remove(); }, 300);
         }, 2800);
     }
 
@@ -269,4 +273,9 @@ export class CharacterUI {
             this.overlayContainer = null;
         }
     }
+}
+
+// 輔助小函式：避免 sunCoins 報錯
+function intializeCoins() {
+    return 100;
 }

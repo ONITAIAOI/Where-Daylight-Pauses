@@ -9,29 +9,31 @@ import { RestHouseUI } from './ui/RestHouseUI';
 
 let mainHUD: MainHUD | null = null;
 let currentGlobalUid: string | null = null;
-let isInitializing = false; // 🔒 防重複觸發鎖
+let isInitializing = false; // 防重複觸發鎖
 
 function initGame() {
     console.log('正在進行安全驗證與登入...');
 
     onAuthStateChanged(auth, async (user) => {
-        if (isInitializing) return; // 如果正在初始化中，先略過重複觸發
+        if (isInitializing) return;
 
         if (user) {
+            // 已經有登入身分（可能是舊玩家重新整理，或剛註冊完）
             isInitializing = true;
             currentGlobalUid = user.uid;
-            console.log('已安全登入，UID:', currentGlobalUid);
+            console.log('已辨識旅人身分，UID:', currentGlobalUid);
             try {
                 await loadPlayerProfileFlow(currentGlobalUid);
             } finally {
                 isInitializing = false;
             }
         } else {
+            // 這台裝置完全沒有身分紀錄（全新訪客），才執行匿名登入
             isInitializing = true;
             try {
-                console.log('尚未登入，正在執行匿名登入...');
+                console.log('初次造訪，正在建立免登入旅人身分...');
                 await signInAnonymously(auth);
-                // 登入成功後，onAuthStateChanged 會自動抓到 user 並再次被觸發，因此這裡不用手動呼叫 loadPlayerProfileFlow
+                // 登入成功後，onAuthStateChanged 會自動捕捉並跳到上面的 if (user)
             } catch (error) {
                 console.error('Firebase 匿名登入失敗:', error);
                 isInitializing = false;
@@ -45,18 +47,18 @@ async function loadPlayerProfileFlow(currentUid: string) {
     try {
         const profile = await getPlayerProfile(currentUid);
 
-        if (!profile) {
-            console.log('查無玩家資料，導向創角介面');
+        // 只有在資料庫真的完全查不到這個 UID 的資料時，才叫出創角畫面
+        if (!profile || !profile.nickname) {
+            console.log('此身分尚無名片資料，導向創角介面');
             new CharacterUI(currentUid, (newProfile) => {
                 startDailyMoodFlow(currentUid, newProfile);
             });
         } else {
-            console.log('已讀取到玩家資料，檢查今日是否已簽到');
-            
+            console.log('已成功讀取既有旅人資料，檢查今日心境...');
             const todayStr = new Date().toISOString().split('T')[0];
 
             if (profile.lastMoodDate === todayStr) {
-                console.log('今日已完成心境簽到，直接進入主畫面');
+                console.log('今日已完成簽到，直接進入主畫面');
                 launchMainHUD(currentUid, profile);
             } else {
                 console.log('今日尚未簽到，開啟每日心境流程');
