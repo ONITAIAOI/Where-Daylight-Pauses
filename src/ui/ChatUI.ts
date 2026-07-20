@@ -12,6 +12,7 @@ import {
     doc 
 } from 'firebase/firestore';
 import { PlayerProfile } from '../firebase/playerData';
+import { CHAT_SKINS } from '../config/chatSkinsConfig'; // 🌟 引入你的聊天外觀設定檔
 
 export class ChatUI {
     private authUid: string;
@@ -45,7 +46,7 @@ export class ChatUI {
                 .chat-message-bubble {
                     max-width: 75%;
                     padding: 10px 14px;
-                    border-radius: 12px;
+                    border-radius: 14px;
                     font-size: 13px;
                     line-height: 1.4;
                     word-break: break-all;
@@ -170,14 +171,6 @@ export class ChatUI {
         });
     }
 
-    private hexToRgba(hex: string, alpha: number): string {
-        // 簡易的 Hex 轉 RGBA，用來為聊天框添加透明度
-        const r = parseInt(hex.slice(1, 3), 16) || 255;
-        const g = parseInt(hex.slice(3, 5), 16) || 255;
-        const b = parseInt(hex.slice(5, 7), 16) || 255;
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     private renderMessages(messages: any[]) {
         const area = document.getElementById('chat-messages-area');
         if (!area) return;
@@ -194,7 +187,10 @@ export class ChatUI {
         area.innerHTML = '';
         messages.forEach((msg) => {
             const isMe = msg.uid === this.authUid;
-            const customColor = msg.avatarColor || '#eab308'; // 讀取發言者的專屬顏色
+            
+            // 🌟 取得該則訊息對應的面板外觀設定（若找不到則預設為 default）
+            const skinId = msg.skinId || 'default';
+            const skin = CHAT_SKINS[skinId] || CHAT_SKINS['default'];
 
             const wrapper = document.createElement('div');
             wrapper.style.cssText = `
@@ -203,12 +199,12 @@ export class ChatUI {
                 width: 100%;
             `;
 
-            // 🌟 只有「不是自己」的訊息，才顯示上方暱稱與其自訂顏色
+            // 🌟 只有「不是自己」的訊息，才顯示上方暱稱（顏色可根據該外觀適度呼應或維持金色）
             if (!isMe) {
                 const nameTag = document.createElement('div');
                 nameTag.style.cssText = `
                     font-size: 11px; 
-                    color: ${customColor}; /* 名字套用對方專屬色 */
+                    color: #eab308; 
                     margin-bottom: 2px; 
                     padding: 0 4px;
                     font-weight: 600;
@@ -222,22 +218,17 @@ export class ChatUI {
             bubble.className = 'chat-message-bubble';
             
             if (isMe) {
-                // 自己發送的：維持專屬醒目的黃金色外框與發光字體
-                bubble.style.cssText += `
-                    background: rgba(234, 179, 8, 0.15);
-                    border: 1px solid rgba(234, 179, 8, 0.3);
-                    color: #fde047;
-                `;
+                // 🌟 自己發送的訊息：直接套用自己目前選擇的面板泡泡與文字風格
+                bubble.style.cssText += skin.bubbleStyle;
+                if (skin.textStyle) {
+                    bubble.style.cssText += skin.textStyle;
+                }
             } else {
-                // 🌟 別人發送的：背景微亮、邊框套用對方的專屬顏色，文字為預設白色
-                const bgRgba = this.hexToRgba(customColor, 0.08); // 8% 的透明度背景
-                const borderRgba = this.hexToRgba(customColor, 0.4); // 40% 的邊框透明度
-                
-                bubble.style.cssText += `
-                    background: ${bgRgba};
-                    border: 1px solid ${borderRgba};
-                    color: #f3f0ea; /* 文字保持舒適的米白色 */
-                `;
+                // 🌟 別人發送的訊息：直接套用該玩家選用的面板風格（讓所有人都能欣賞到彼此買的造型！）
+                bubble.style.cssText += skin.bubbleStyle;
+                if (skin.textStyle) {
+                    bubble.style.cssText += skin.textStyle;
+                }
             }
             
             bubble.textContent = msg.text;
@@ -251,10 +242,14 @@ export class ChatUI {
     private async sendMessage(text: string) {
         try {
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
+            
+            // 🌟 讀取玩家目前配戴的 skinId（如果沒有就預設為 'default'）
+            const currentSkinId = (this.profile as any).activeChatSkin || (this.profile as any).skinId || 'default';
+
             await addDoc(messagesRef, {
                 uid: this.authUid,
                 nickname: this.profile.nickname || '善意旅人',
-                avatarColor: (this.profile as any).avatarColor || '#eab308', 
+                skinId: currentSkinId, // 🌟 把選中的外觀 ID 寫入資料庫
                 text: text,
                 timestamp: serverTimestamp()
             });
