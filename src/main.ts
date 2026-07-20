@@ -94,7 +94,7 @@ async function startDailyMoodFlow(currentUid: string, profile: any) {
         if (existingItem) {
             existingItem.count = (existingItem.count || 1) + 1; // 已有該道具則數量 +1
         } else {
-            profile.inventory.push({ id: targetItem, count: 1 });     // 沒有則新增
+            profile.inventory.push({ id: targetItem, count: 1 });    // 沒有則新增
         }
 
         // 3. 儲存最新狀態到 Firebase 資料庫
@@ -110,13 +110,16 @@ async function startDailyMoodFlow(currentUid: string, profile: any) {
     });
 }
 
-// 啟動遊戲主介面
+// 啟動遊戲主介面（確實傳入 currentUid 讓 MainHUD 與 ChatUI 鎖定身分）
 function launchMainHUD(currentUid: string, profile: any) {
     if (mainHUD) {
         mainHUD.remove();
     }
 
-    mainHUD = new MainHUD(profile, {
+    // 將真實 uid 寫入 profile 備用
+    profile.uid = currentUid; 
+
+    mainHUD = new MainHUD(profile, currentUid, {
         onOpenTownMap: () => {
             console.log('玩家點擊了：探索小鎮地圖');
             

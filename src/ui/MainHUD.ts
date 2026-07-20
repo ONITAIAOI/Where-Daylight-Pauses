@@ -12,6 +12,7 @@ export interface MainHUDOptions {
 
 export class MainHUD {
     private profile: PlayerProfile;
+    private authUid: string; // 🌟 接收並鎖定真實的 Firebase Auth UID
     private options: MainHUDOptions;
     private container: HTMLDivElement | null = null;
     private isToastActive: boolean = false;
@@ -19,8 +20,9 @@ export class MainHUD {
     private chatUI: ChatUI | null = null;
     private restHouseUI: RestHouseUI | null = null;
 
-    constructor(profile: PlayerProfile, options: MainHUDOptions) {
+    constructor(profile: PlayerProfile, authUid: string, options: MainHUDOptions) {
         this.profile = profile;
+        this.authUid = authUid;
         this.options = options;
 
         this.injectGlobalStyles();
@@ -280,7 +282,7 @@ export class MainHUD {
             });
         });
 
-        // 3. 鎮民廣場 (精確對齊 ChatUI(uid, profile, onClose))
+        // 3. 鎮民廣場 (精確傳入正確的 authUid 作為唯一身分識別)
         document.getElementById('btn-chat')?.addEventListener('click', () => {
             if (this.options.onOpenChat) {
                 this.options.onOpenChat();
@@ -291,9 +293,11 @@ export class MainHUD {
                 this.chatUI.remove();
             }
 
-            const userId = (this.profile as any).uid || 'anonymous_user';
+            // 🌟 嚴格使用從主程式綁定的真實 authUid，徹底根絕匿名分身錯亂與重複發送問題
+            const userId = this.authUid || (this.profile as any).uid;
 
-            // 正確填入 3 個參數: uid (string), profile (PlayerProfile), onClose (() => void)
+            console.log(`💬 正在開啟鎮民廣場，本次的身分 UID 鎖定為: [${userId}]`);
+
             this.chatUI = new ChatUI(
                 userId,
                 this.profile, 
@@ -311,7 +315,7 @@ export class MainHUD {
             if (this.restHouseUI) {
                 this.restHouseUI = null;
             }
-            const userId = (this.profile as any).uid || this.profile.nickname || 'default_user';
+            const userId = this.authUid || (this.profile as any).uid || 'default_user';
             this.restHouseUI = new RestHouseUI(userId, () => {
                 this.restHouseUI = null;
             });
