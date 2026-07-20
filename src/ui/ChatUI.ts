@@ -180,12 +180,20 @@ export class ChatUI {
             const text = inputField.value.trim();
             if (!text) return;
 
+            // 🌟 嚴格確保發送時帶入當前實例的正確 UID
+            const senderUid = this.uid;
+            if (!senderUid) {
+                console.error('錯誤：找不到發送者的 UID！');
+                alert('身分驗證異常，請重新整理網頁。');
+                return;
+            }
+
             sendBtn?.setAttribute('disabled', 'true');
             inputField.value = '';
 
             try {
                 await addDoc(collection(db, 'chats'), {
-                    uid: this.uid,
+                    uid: senderUid,
                     nickname: this.profile.nickname || '神秘旅人',
                     avatarColor: this.profile.avatarColor || '#eab308',
                     chatSkin: (this.profile as any).equippedChatSkin || 'default',
@@ -224,6 +232,8 @@ export class ChatUI {
 
             snapshot.forEach((docSnap) => {
                 const msg = docSnap.data() as ChatMessage;
+                
+                // 🌟 精準比對：訊息裡的 uid 是否等於當前登入使用者的 uid
                 const isMe = msg.uid === this.uid;
                 
                 let timeStr = '';
