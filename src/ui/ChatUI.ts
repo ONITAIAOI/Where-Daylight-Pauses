@@ -170,6 +170,14 @@ export class ChatUI {
         });
     }
 
+    private hexToRgba(hex: string, alpha: number): string {
+        // 簡易的 Hex 轉 RGBA，用來為聊天框添加透明度
+        const r = parseInt(hex.slice(1, 3), 16) || 255;
+        const g = parseInt(hex.slice(3, 5), 16) || 255;
+        const b = parseInt(hex.slice(5, 7), 16) || 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     private renderMessages(messages: any[]) {
         const area = document.getElementById('chat-messages-area');
         if (!area) return;
@@ -186,6 +194,8 @@ export class ChatUI {
         area.innerHTML = '';
         messages.forEach((msg) => {
             const isMe = msg.uid === this.authUid;
+            const customColor = msg.avatarColor || '#eab308'; // 讀取發言者的專屬顏色
+
             const wrapper = document.createElement('div');
             wrapper.style.cssText = `
                 display: flex; flex-direction: column;
@@ -198,9 +208,10 @@ export class ChatUI {
                 const nameTag = document.createElement('div');
                 nameTag.style.cssText = `
                     font-size: 11px; 
-                    color: ${msg.avatarColor || '#eab308'}; 
+                    color: ${customColor}; /* 名字套用對方專屬色 */
                     margin-bottom: 2px; 
                     padding: 0 4px;
+                    font-weight: 600;
                 `;
                 nameTag.textContent = msg.nickname || '善意旅人';
                 wrapper.appendChild(nameTag);
@@ -209,13 +220,27 @@ export class ChatUI {
             // 訊息泡泡本體
             const bubble = document.createElement('div');
             bubble.className = 'chat-message-bubble';
-            bubble.style.cssText += `
-                background: ${isMe ? 'rgba(234, 179, 8, 0.15)' : 'rgba(255, 255, 255, 0.04)'};
-                border: 1px solid ${isMe ? 'rgba(234, 179, 8, 0.3)' : 'rgba(255, 255, 255, 0.06)'};
-                color: ${isMe ? '#fde047' : '#f3f0ea'};
-            `;
+            
+            if (isMe) {
+                // 自己發送的：維持專屬醒目的黃金色外框與發光字體
+                bubble.style.cssText += `
+                    background: rgba(234, 179, 8, 0.15);
+                    border: 1px solid rgba(234, 179, 8, 0.3);
+                    color: #fde047;
+                `;
+            } else {
+                // 🌟 別人發送的：背景微亮、邊框套用對方的專屬顏色，文字為預設白色
+                const bgRgba = this.hexToRgba(customColor, 0.08); // 8% 的透明度背景
+                const borderRgba = this.hexToRgba(customColor, 0.4); // 40% 的邊框透明度
+                
+                bubble.style.cssText += `
+                    background: ${bgRgba};
+                    border: 1px solid ${borderRgba};
+                    color: #f3f0ea; /* 文字保持舒適的米白色 */
+                `;
+            }
+            
             bubble.textContent = msg.text;
-
             wrapper.appendChild(bubble);
             area.appendChild(wrapper);
         });
@@ -229,7 +254,7 @@ export class ChatUI {
             await addDoc(messagesRef, {
                 uid: this.authUid,
                 nickname: this.profile.nickname || '善意旅人',
-                avatarColor: (this.profile as any).avatarColor || '#eab308', // 🌟 確實把個人設定的顏色存進資料庫
+                avatarColor: (this.profile as any).avatarColor || '#eab308', 
                 text: text,
                 timestamp: serverTimestamp()
             });
