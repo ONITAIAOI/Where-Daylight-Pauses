@@ -20,7 +20,7 @@ export class ChatUI {
     private container: HTMLDivElement | null = null;
     private unsubscribe: (() => void) | null = null;
     
-    // 🌟 固定聊天室 ID（所有人都共用這一個大廳，不會在 chats 產生一堆亂數檔案）
+    // 固定聊天室 ID（共用大廳）
     private currentChatId: string = 'town_square';
 
     constructor(authUid: string, profile: PlayerProfile, onClose: () => void) {
@@ -150,10 +150,7 @@ export class ChatUI {
     }
 
     private listenMessages() {
-        // 🌟 正確路徑：固定讀取 chats/town_square 底下的 messages
         const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
-        
-        // 🌟 關鍵優化：只抓取最新 20 筆訊息（依時間降序排列再反轉，確保畫面上最新在下方）
         const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(20));
 
         this.unsubscribe = onSnapshot(q, (snapshot) => {
@@ -162,11 +159,9 @@ export class ChatUI {
                 rawMessages.push({ id: doc.id, ...doc.data() });
             });
 
-            // 反轉順序，讓最舊的在上面、最新的在下面
             const messages = rawMessages.reverse();
             this.renderMessages(messages);
 
-            // 🌟 附加安全機制：當伺服器端抓回來的總數大於 30 則時，自動背景清理超出的舊訊息
             if (snapshot.size > 30) {
                 this.cleanOldMessages();
             }
@@ -198,10 +193,18 @@ export class ChatUI {
                 width: 100%;
             `;
 
-            // 發言者暱稱
-            const nameTag = document.createElement('div');
-            nameTag.style.cssText = `font-size: 11px; color: #8c8275; margin-bottom: 2px; padding: 0 4px;`;
-            nameTag.textContent = msg.nickname || '善意旅人';
+            // 🌟 只有「不是自己」的訊息，才顯示上方暱稱與其自訂顏色
+            if (!isMe) {
+                const nameTag = document.createElement('div');
+                nameTag.style.cssText = `
+                    font-size: 11px; 
+                    color: ${msg.avatarColor || '#eab308'}; 
+                    margin-bottom: 2px; 
+                    padding: 0 4px;
+                `;
+                nameTag.textContent = msg.nickname || '善意旅人';
+                wrapper.appendChild(nameTag);
+            }
 
             // 訊息泡泡本體
             const bubble = document.createElement('div');
@@ -213,12 +216,10 @@ export class ChatUI {
             `;
             bubble.textContent = msg.text;
 
-            wrapper.appendChild(nameTag);
             wrapper.appendChild(bubble);
             area.appendChild(wrapper);
         });
 
-        // 自動捲動到最底部
         area.scrollTop = area.scrollHeight;
     }
 
@@ -228,32 +229,24 @@ export class ChatUI {
             await addDoc(messagesRef, {
                 uid: this.authUid,
                 nickname: this.profile.nickname || '善意旅人',
-                avatarColor: (this.profile as any).avatarColor || '#eab308',
+                avatarColor: (this.profile as any).avatarColor || '#eab308', // 🌟 確實把個人設定的顏色存進資料庫
                 text: text,
-                timestamp: serverTimestamp() // 讓 Firebase 記錄伺服器精準時間
+                timestamp: serverTimestamp()
             });
         } catch (error) {
             console.error('發送訊息失敗:', error);
         }
     }
 
-    /**
-     * 🌟 定期清理機制：
-     * 當訊息累積過多時，在背景自動刪除最舊的訊息。
-     * 具有安全時間鎖：絕不刪除 5 分鐘之內發送的訊息，保護剛發言完的使用者。
-     */
     private async cleanOldMessages() {
         try {
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
-            // 抓出歷史全部訊息，照時間由舊到新排序
             const q = query(messagesRef, orderBy('timestamp', 'asc'));
             const snapshot = await getDocs(q);
 
             const docs = snapshot.docs;
-            // 如果總數未超過 30 則，不需要清理
             if (docs.length <= 30) return;
 
-            // 計算需要被清理的超額數量
             const excessCount = docs.length - 20; 
             let deletedCount = 0;
 
@@ -267,19 +260,13 @@ export class ChatUI {
 
                 if (timestamp && typeof timestamp.toMillis === 'function') {
                     const msgTime = timestamp.toMillis();
-                    // 🛡️ 安全鎖：如果這則訊息在 5 分鐘之內，絕對跳過不刪除！
                     if (now - msgTime < FIVE_MINUTES) {
                         continue;
                     }
                 }
 
-                // 執行刪除過期舊訊息
                 await deleteDoc(doc(db, 'chats', this.currentChatId, 'messages', docSnap.id));
                 deletedCount++;
-            }
-
-            if (deletedCount > 0) {
-                console.log(`🧹 系統背景清理完成，已安全移除 ${deletedCount} 則過期舊訊息。`);
             }
         } catch (error) {
             console.error('自動清理舊訊息時發生錯誤:', error);
@@ -288,7 +275,7 @@ export class ChatUI {
 
     public remove() {
         if (this.unsubscribe) {
-            this.unsubscribe(); // 關閉即時監聽，節省流量
+            this.unsubscribe();
             this.unsubscribe = null;
         }
         if (this.container) {
