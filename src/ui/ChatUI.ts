@@ -16,12 +16,11 @@ export interface ChatMessage {
     uid: string;
     nickname: string;
     avatarColor: string;
-    chatSkin?: string; // 支援未來課金外觀與樣式
+    chatSkin?: string;
     text: string;
     createdAt: Timestamp | Date | any;
 }
 
-// 💬 對話框與文字樣式設定檔（支援未來擴充課金裝備）
 const CHAT_SKINS: Record<string, { bubble: string; text: string }> = {
     default: {
         bubble: 'background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #1c1714; box-shadow: 0 4px 12px rgba(234, 179, 8, 0.2); font-weight: 500;',
@@ -77,18 +76,14 @@ export class ChatUI {
                 box-sizing: border-box; display: flex; flex-direction: column;
                 max-height: 92vh; height: 85vh;
             ">
-                <!-- 🌅 上方主視覺 Banner 區域 -->
                 <div style="
                     position: relative; height: 140px; min-height: 140px;
                     background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.4) 50%, #1c1714 100%), 
                                 url('./assets/images/main.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
                     padding: 20px 24px; box-sizing: border-box;
-                    overflow: hidden;
-                    border-top-left-radius: 24px;
-                    border-top-right-radius: 24px;
+                    overflow: hidden; border-top-left-radius: 24px; border-top-right-radius: 24px;
                 ">
-                    <!-- 💰 上排：幣值與關閉按鈕 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 16px;">💬</span>
@@ -112,8 +107,6 @@ export class ChatUI {
                             ">✕</button>
                         </div>
                     </div>
-
-                    <!-- 下排：標語 -->
                     <div style="z-index: 1;">
                         <div style="font-size: 10px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                             TOWNSFOLK PLAZA
@@ -124,7 +117,6 @@ export class ChatUI {
                     </div>
                 </div>
 
-                <!-- 📜 訊息滾動區 -->
                 <div id="chat-messages-scroll" style="
                     flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
                     scroll-behavior: smooth; background: #1c1714;
@@ -134,7 +126,6 @@ export class ChatUI {
                     </div>
                 </div>
 
-                <!-- ✍️ 輸入與發送區 -->
                 <div style="
                     padding: 16px 22px; background: rgba(28, 23, 20, 0.95);
                     border-top: 1px solid rgba(234, 179, 8, 0.15);
@@ -180,21 +171,15 @@ export class ChatUI {
             const text = inputField.value.trim();
             if (!text) return;
 
-            // 🌟 嚴格確保使用當前例項中正確的 Authentication UID
-            const realUid = this.uid;
-            if (!realUid) {
-                console.error('錯誤：找不到有效的 UID');
-                alert('身分驗證異常，請重新整理網頁。');
-                return;
-            }
+            const myNickname = this.profile.nickname || '神秘旅人';
 
             sendBtn?.setAttribute('disabled', 'true');
             inputField.value = '';
 
             try {
                 await addDoc(collection(db, 'chats'), {
-                    uid: realUid, // 絕對對應的使用者 UID
-                    nickname: this.profile.nickname || '神秘旅人',
+                    uid: myNickname, // 讓資料庫的 uid 欄位也存入當前暱稱，維持一致性
+                    nickname: myNickname,
                     avatarColor: this.profile.avatarColor || '#eab308',
                     chatSkin: (this.profile as any).equippedChatSkin || 'default',
                     text: text,
@@ -232,9 +217,10 @@ export class ChatUI {
 
             snapshot.forEach((docSnap) => {
                 const msg = docSnap.data() as ChatMessage;
+                const myNickname = this.profile.nickname || '神秘旅人';
                 
-                // 🌟 比對訊息中的 uid 與當前登入使用者的 uid
-                const isMe = msg.uid === this.uid;
+                // 🌟 改用暱稱進行雙重判定（只要訊息裡的 uid 或 nickname 跟我的暱稱一樣，就視為我自己）
+                const isMe = (msg.uid === myNickname) || (msg.nickname === myNickname) || (msg.uid === this.uid);
                 
                 let timeStr = '';
                 if (msg.createdAt && typeof msg.createdAt.toDate === 'function') {
@@ -244,12 +230,10 @@ export class ChatUI {
                     timeStr = '剛剛';
                 }
 
-                // 取得對話框外觀設定（若無則用預設）
                 const skinKey = msg.chatSkin && CHAT_SKINS[msg.chatSkin] ? msg.chatSkin : 'default';
                 const skinConfig = CHAT_SKINS[skinKey];
 
                 if (isMe) {
-                    // 🌟 自己的訊息：靠右側顯示
                     html += `
                         <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; width: 100%;">
                             <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
@@ -264,7 +248,6 @@ export class ChatUI {
                         </div>
                     `;
                 } else {
-                    // 🌟 別人的訊息：靠左側顯示，並標示對方的暱稱與其專屬代表色
                     html += `
                         <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; width: 100%;">
                             <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
