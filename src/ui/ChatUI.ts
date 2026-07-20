@@ -48,6 +48,9 @@ export class ChatUI {
         this.profile = profile;
         this.onClose = onClose;
 
+        // 🚨 終極除錯：在 F12 主控台印出當前例項拿到的真實 UID 與 暱稱
+        console.log(`[ChatUI 初始化] 當前身分 UID: "${this.uid}" | 暱稱: "${this.profile.nickname}"`);
+
         this.render();
         this.listenToMessages();
     }
@@ -171,15 +174,14 @@ export class ChatUI {
             const text = inputField.value.trim();
             if (!text) return;
 
-            const myNickname = this.profile.nickname || '神秘旅人';
-
             sendBtn?.setAttribute('disabled', 'true');
             inputField.value = '';
 
             try {
+                // 🌟 發送時，嚴格將這台機器的真實 UID 寫入資料庫
                 await addDoc(collection(db, 'chats'), {
-                    uid: myNickname, // 讓資料庫的 uid 欄位也存入當前暱稱，維持一致性
-                    nickname: myNickname,
+                    uid: this.uid, 
+                    nickname: this.profile.nickname || '神秘旅人',
                     avatarColor: this.profile.avatarColor || '#eab308',
                     chatSkin: (this.profile as any).equippedChatSkin || 'default',
                     text: text,
@@ -217,10 +219,9 @@ export class ChatUI {
 
             snapshot.forEach((docSnap) => {
                 const msg = docSnap.data() as ChatMessage;
-                const myNickname = this.profile.nickname || '神秘旅人';
                 
-                // 🌟 改用暱稱進行雙重判定（只要訊息裡的 uid 或 nickname 跟我的暱稱一樣，就視為我自己）
-                const isMe = (msg.uid === myNickname) || (msg.nickname === myNickname) || (msg.uid === this.uid);
+                // 🌟 嚴格比對：只有當訊息裡的 uid 等於當前實例的 uid 時，才判定為「我」
+                const isMe = msg.uid === this.uid;
                 
                 let timeStr = '';
                 if (msg.createdAt && typeof msg.createdAt.toDate === 'function') {
