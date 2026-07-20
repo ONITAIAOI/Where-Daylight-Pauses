@@ -1,4 +1,5 @@
 import { PlayerProfile, savePlayerProfile } from '../firebase/playerData';
+import { addPlayerItem } from '../utils/inventoryUtils'; // 引入獲得道具工具
 
 export class DailyMoodUI {
     private uid: string;
@@ -18,12 +19,12 @@ export class DailyMoodUI {
         { name: '悠閒隨性', desc: '沒有目的地，走到哪裡就停在哪裡。', icon: '🍃' }
     ];
 
-    // 每日隨身信物選項
+    // 每日隨身信物選項（並對應圖鑑中的正式 ID）
     private itemOptions = [
-        { name: '暖心熱茶', desc: '驅散寒意，帶來溫暖的療癒感。' },
-        { name: '舊相機', desc: '捕捉沿途的光影與美好瞬間。' },
-        { name: '旅行日記', desc: '記錄今天的靈感與心情點滴。' },
-        { name: '懷錶', desc: '提醒自己放慢腳步，享受當下。' }
+        { id: 'item_51', name: '暖心熱茶', desc: '驅散寒意，帶來溫暖的療癒感。' },
+        { id: 'item_52', name: '舊相機', desc: '捕捉沿途的光影與美好瞬間。' },
+        { id: 'item_53', name: '旅行日記', desc: '記錄今天的靈感與心情點滴。' },
+        { id: 'item_54', name: '懷錶', desc: '提醒自己放慢腳步，享受當下。' }
     ];
 
     constructor(uid: string, profile: PlayerProfile, onComplete: (mood: string, item: string) => void) {
@@ -238,15 +239,22 @@ export class DailyMoodUI {
                 this.profile.lastMoodDate = todayStr; // 寫入今日簽到日期
 
                 try {
+                    // 1. 儲存玩家個人檔案
                     await savePlayerProfile(this.uid, this.profile);
 
-                    this.showToast(`✨ 今日心境已記錄：${this.selectedMood}`);
+                    // 2. 找到選擇的信物所對應的圖鑑 ID 並發放到背包中
+                    const selectedObj = this.itemOptions.find(i => i.name === this.selectedItem);
+                    if (selectedObj) {
+                        await addPlayerItem(this.uid, selectedObj.id, 1);
+                    }
+
+                    this.showToast(`✨ 今日心境已記錄，並獲得了 ${this.selectedItem}！`);
                     setTimeout(() => {
                         this.remove();
                         this.onComplete(this.selectedMood, this.selectedItem);
                     }, 600);
                 } catch (error) {
-                    console.error('儲存今日心境失敗:', error);
+                    console.error('儲存今日心境或發放道具失敗:', error);
                     this.showToast('❌ 儲存失敗，請稍後再試');
                     submitBtn.disabled = false;
                     submitBtn.innerText = '開啟今日小鎮時光 ➔';

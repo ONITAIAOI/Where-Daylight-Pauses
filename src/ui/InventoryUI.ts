@@ -1,11 +1,10 @@
-export interface InventoryItem {
-    id: string;
-    name: string;
-    category: 'consumable' | 'equipment' | 'material';
-    icon: string;
+import { db } from '../firebase/config';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { ITEM_DATABASE, ItemDefinition } from '../config/itemRegistry';
+
+// 組合後的完整道具介面（包含數量與圖鑑資訊）
+export interface DisplayInventoryItem extends ItemDefinition {
     count: number;
-    desc: string;
-    rarity?: 'common' | 'rare' | 'epic';
 }
 
 export class InventoryUI {
@@ -13,21 +12,14 @@ export class InventoryUI {
     private onClose: () => void;
     private overlayContainer: HTMLDivElement | null = null;
     private currentTab: 'all' | 'consumable' | 'equipment' | 'material' = 'all';
-    private selectedItem: InventoryItem | null = null;
-
-    private items: InventoryItem[] = [
-        { id: 'item_1', name: '香濃熱咖啡', category: 'consumable', icon: '☕', count: 3, desc: '咖啡館特製的熱咖啡，飲用後可恢復些許精神，帶來溫暖。', rarity: 'common' },
-        { id: 'item_2', name: '祈願星砂', category: 'material', icon: '✨', count: 12, desc: '在中央記憶噴泉附近收集到的閃亮星砂，散發著微光。', rarity: 'rare' },
-        { id: 'item_3', name: '老舊指南針', category: 'equipment', icon: '🧭', count: 1, desc: '雖然指針有點生鏽，但在探索老街巷弄時似乎能指引方向。', rarity: 'rare' },
-        { id: 'item_4', name: '鎮民感謝信', category: 'material', icon: '💌', count: 1, desc: '來自小鎮居民的謝函，乘載著滿滿的人情味。', rarity: 'common' },
-        { id: 'item_5', name: '神祕樹果', category: 'consumable', icon: '🍎', count: 5, desc: '帶有甜香味的野生果實，野外探索時常見的補給品。', rarity: 'common' }
-    ];
+    private selectedItem: DisplayInventoryItem | null = null;
+    private items: DisplayInventoryItem[] = []; 
 
     constructor(uid: string, onClose: () => void) {
         this.uid = uid;
         this.onClose = onClose;
         this.injectGlobalStyles();
-        this.render();
+        this.loadInventoryAndRender();
     }
 
     private injectGlobalStyles() {
@@ -67,6 +59,42 @@ export class InventoryUI {
         }
     }
 
+    // 🌟 從 Firebase 讀取簡易背包，並透過 ITEM_DATABASE 展開完整圖鑑資訊
+    private async loadInventoryAndRender() {
+        try {
+            const playerDocRef = doc(db, 'players', this.uid);
+            const snapshot = await getDoc(playerDocRef);
+
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                const rawInventory: { id: string; count: number }[] = data.inventory || [];
+
+                // 將資料庫的 {id, count} 對照圖鑑轉換成帶有圖標、名稱、說明的完整物件
+                this.items = rawInventory.map(invItem => {
+                    const def = ITEM_DATABASE[invItem.id] || {
+                        id: invItem.id,
+                        name: '未知道具',
+                        category: 'material' as const,
+                        icon: '📦',
+                        desc: '一個神秘的未知物品。',
+                        rarity: 'common' as const
+                    };
+                    return {
+                        ...def,
+                        count: invItem.count
+                    };
+                });
+            } else {
+                this.items = [];
+            }
+        } catch (error) {
+            console.error('讀取行囊失敗:', error);
+            this.items = [];
+        }
+
+        this.render();
+    }
+
     private render() {
         this.remove();
 
@@ -81,13 +109,15 @@ export class InventoryUI {
             padding: 20px; box-sizing: border-box;
         `;
 
-        if (this.items.length > 0 && !this.selectedItem) {
-            this.selectedItem = this.items[0];
-        }
-
         const filteredItems = this.currentTab === 'all' 
             ? this.items 
             : this.items.filter(i => i.category === this.currentTab);
+
+        if (filteredItems.length > 0 && (!this.selectedItem || !filteredItems.some(i => i.id === this.selectedItem?.id))) {
+            this.selectedItem = filteredItems[0];
+        } else if (filteredItems.length === 0) {
+            this.selectedItem = null;
+        }
 
         this.overlayContainer.innerHTML = `
             <div style="
@@ -101,7 +131,7 @@ export class InventoryUI {
                 display: flex; flex-direction: column; gap: 20px;
                 max-height: 90vh; overflow: hidden;
             ">
-                <!-- 頂部返回按鈕與標籤區 (對齊小屋風格) -->
+                <!-- 頂部返回按鈕與標籤區 -->
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="inv-btn-close" class="inv-close-btn" style="
                         background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
@@ -115,7 +145,7 @@ export class InventoryUI {
                     </div>
                 </div>
 
-                <!-- 標題區 (對齊小屋風格與上方 BANNER 視覺) -->
+                <!-- 標題區 -->
                 <div>
                     <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                         PERSONAL INVENTORY
@@ -161,7 +191,7 @@ export class InventoryUI {
                     `}
                 </div>
 
-                <!-- 底部物品詳情與操作區 (Inspector) -->
+                <!-- 底部物品詳情與操作區 -->
                 <div style="
                     background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(234, 179, 8, 0.2);
                     border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
@@ -182,7 +212,7 @@ export class InventoryUI {
                                 background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4);
                                 color: #fde047; padding: 6px 14px; border-radius: 8px; font-size: 12px;
                                 font-weight: 600; cursor: pointer; transition: all 0.2s;
-                            ">使用 / 查看</button>
+                            ">${this.selectedItem.category === 'consumable' ? '使用道具' : '查看詳情'}</button>
                         </div>
                     ` : `
                         <div style="text-align: center; color: #a89f91; font-size: 12px; padding: 6px;">
@@ -232,9 +262,37 @@ export class InventoryUI {
 
         const useBtn = document.getElementById('inv-use-btn');
         if (useBtn && this.selectedItem) {
-            useBtn.onclick = () => {
-                alert(`你使用了：${this.selectedItem?.name}`);
-            };
+            useBtn.onclick = () => this.handleUseItem();
+        }
+    }
+
+    // 🌟 處理道具使用邏輯（消耗品數量遞減，並將輕量資料同步回 Firebase）
+    private async handleUseItem() {
+        if (!this.selectedItem) return;
+
+        if (this.selectedItem.category === 'consumable') {
+            alert(`你使用了 ${this.selectedItem.name}，精神獲得了恢復！`);
+            
+            // 扣除數量
+            this.selectedItem.count -= 1;
+            
+            // 轉換回資料庫要存的輕量格式 ({ id, count })
+            let rawInventory = this.items.map(i => ({
+                id: i.id,
+                count: i.count
+            })).filter(i => i.count > 0); // 數量歸零自動濾掉
+
+            try {
+                const playerDocRef = doc(db, 'players', this.uid);
+                await updateDoc(playerDocRef, { inventory: rawInventory });
+            } catch (err) {
+                console.error('更新背包存檔失敗:', err);
+            }
+
+            // 重新讀取渲染
+            this.loadInventoryAndRender();
+        } else {
+            alert(`這是 ${this.selectedItem.name}：${this.selectedItem.desc}`);
         }
     }
 
