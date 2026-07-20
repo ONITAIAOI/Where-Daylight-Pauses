@@ -70,11 +70,16 @@ async function loadPlayerProfileFlow(currentUid: string) {
     }
 }
 
-// 啟動每日心境流程（包含：記錄簽到日期、道具存入背包、寫入 Firebase）
+// 啟動每日心境流程（已優化道具接收與背包寫入邏輯）
 async function startDailyMoodFlow(currentUid: string, profile: any) {
     new DailyMoodUI(currentUid, profile, async (mood, item) => {
+        console.log('接收到心境與道具選擇:', { mood, item });
+
         profile.mood = mood;
-        profile.item = item;
+        
+        // 確保道具名稱有被指派
+        const targetItem = item || profile.item || '暖心熱茶';
+        profile.item = targetItem;
         
         // 1. 記錄今日簽到日期
         const todayStr = new Date().toISOString().split('T')[0];
@@ -85,19 +90,19 @@ async function startDailyMoodFlow(currentUid: string, profile: any) {
             profile.inventory = [];
         }
 
-        const existingItem = profile.inventory.find((i: any) => i.id === item);
+        const existingItem = profile.inventory.find((i: any) => i.id === targetItem);
         if (existingItem) {
             existingItem.count = (existingItem.count || 1) + 1; // 已有該道具則數量 +1
         } else {
-            profile.inventory.push({ id: item, count: 1 });     // 沒有則新增
+            profile.inventory.push({ id: targetItem, count: 1 });     // 沒有則新增
         }
 
         // 3. 儲存最新狀態到 Firebase 資料庫
         try {
             await savePlayerProfile(currentUid, profile);
-            console.log('今日心境與道具已成功存入背包與資料庫！');
+            console.log('道具已成功存入背包與資料庫！目前背包內容：', profile.inventory);
         } catch (error) {
-            console.error('儲存每日心境失敗:', error);
+            console.error('儲存每日心境與道具失敗:', error);
         }
 
         // 進入遊戲主畫面

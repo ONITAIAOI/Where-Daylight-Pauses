@@ -239,9 +239,12 @@ export class ChatUI {
                 const skinConfig = CHAT_SKINS[skinKey];
 
                 if (isMe) {
+                    // 🌟 自己的訊息：靠右側顯示
                     html += `
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 6px;">
-                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px;">我 · ${timeStr}</div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 12px; width: 100%;">
+                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
+                                我 · ${timeStr}
+                            </div>
                             <div style="
                                 ${skinConfig.bubble}
                                 padding: 10px 14px; border-radius: 14px 14px 2px 14px;
@@ -251,16 +254,18 @@ export class ChatUI {
                         </div>
                     `;
                 } else {
+                    // 🌟 別人的訊息：靠左側顯示，並清楚標示對方的暱稱與其專屬代表色
                     html += `
-                        <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 6px;">
-                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px;">
-                                <span style="color: ${msg.avatarColor || '#eab308'}; font-weight: 600;">${this.escapeHtml(msg.nickname)}</span> · ${timeStr}
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 12px; width: 100%;">
+                            <div style="font-size: 11px; color: #8c8175; margin-bottom: 2px; padding: 0 4px;">
+                                <span style="color: ${msg.avatarColor || '#eab308'}; font-weight: 600;">${this.escapeHtml(msg.nickname || '神秘旅人')}</span> · ${timeStr}
                             </div>
                             <div style="
-                                ${skinConfig.bubble}
+                                background: rgba(255, 255, 255, 0.08);
+                                color: #f3f0ea;
                                 padding: 10px 14px; border-radius: 14px 14px 14px 2px;
                                 max-width: 75%; word-break: break-word; font-size: 13px; line-height: 1.4;
-                                ${skinConfig.text}
+                                border: 1px solid rgba(255, 255, 255, 0.1);
                             ">${this.escapeHtml(msg.text)}</div>
                         </div>
                     `;
