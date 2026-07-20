@@ -14,6 +14,7 @@ export class InventoryUI {
     private currentTab: 'all' | 'consumable' | 'equipment' | 'material' = 'all';
     private selectedItem: DisplayInventoryItem | null = null;
     private items: DisplayInventoryItem[] = []; 
+    private isToastActive: boolean = false;
 
     constructor(uid: string, onClose: () => void) {
         this.uid = uid;
@@ -30,6 +31,14 @@ export class InventoryUI {
                 @keyframes inventoryPopIn {
                     from { opacity: 0; transform: translateY(12px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes toastFadeInTop {
+                    from { opacity: 0; transform: translate(-50%, -20px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+                @keyframes toastFadeOutTop {
+                    from { opacity: 1; transform: translate(-50%, 0); }
+                    to { opacity: 0; transform: translate(-50%, -15px); }
                 }
                 .inv-slot:hover {
                     border-color: rgba(234, 179, 8, 0.5) !important;
@@ -57,6 +66,39 @@ export class InventoryUI {
             `;
             document.head.appendChild(style);
         }
+    }
+
+    // 🌟 統一的 Toast 提示方法
+    private showToast(message: string) {
+        if (this.isToastActive) return; 
+        this.isToastActive = true;
+
+        const oldToast = document.getElementById('inventory-toast');
+        if (oldToast) oldToast.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'inventory-toast';
+        toast.style.cssText = `
+            position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+            background: rgba(28, 23, 20, 0.95);
+            border: 1px solid rgba(234, 179, 8, 0.5);
+            color: #f3f0ea; padding: 14px 26px; border-radius: 14px;
+            font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+            z-index: 9999; backdrop-filter: blur(8px);
+            animation: toastFadeInTop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            white-space: pre-line; text-align: center; line-height: 1.5;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'toastFadeOutTop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+            setTimeout(() => {
+                toast.remove();
+                this.isToastActive = false; 
+            }, 300);
+        }, 3500);
     }
 
     // 🌟 從 Firebase 讀取簡易背包，並透過 ITEM_DATABASE 展開完整圖鑑資訊
@@ -96,7 +138,7 @@ export class InventoryUI {
     }
 
     private render() {
-        this.remove();
+        this.removeOverlay();
 
         this.overlayContainer = document.createElement('div');
         this.overlayContainer.id = 'inventory-overlay';
@@ -266,12 +308,12 @@ export class InventoryUI {
         }
     }
 
-    // 🌟 處理道具使用邏輯（消耗品數量遞減，並將輕量資料同步回 Firebase）
+    // 🌟 處理道具使用或查看詳情邏輯（全部改用 Toast 顯示）
     private async handleUseItem() {
         if (!this.selectedItem) return;
 
         if (this.selectedItem.category === 'consumable') {
-            alert(`你使用了 ${this.selectedItem.name}，精神獲得了恢復！`);
+            this.showToast(`✨ 你使用了 ${this.selectedItem.name}，精神獲得了恢復！`);
             
             // 扣除數量
             this.selectedItem.count -= 1;
@@ -292,14 +334,21 @@ export class InventoryUI {
             // 重新讀取渲染
             this.loadInventoryAndRender();
         } else {
-            alert(`這是 ${this.selectedItem.name}：${this.selectedItem.desc}`);
+            // 非消耗品（裝備、材料等）點擊查看詳情改用 Toast
+            this.showToast(`📜 關於 ${this.selectedItem.name}：\n${this.selectedItem.desc}`);
         }
     }
 
-    public remove() {
+    private removeOverlay() {
         if (this.overlayContainer) {
             this.overlayContainer.remove();
             this.overlayContainer = null;
         }
+    }
+
+    public remove() {
+        const toast = document.getElementById('inventory-toast');
+        if (toast) toast.remove();
+        this.removeOverlay();
     }
 }
