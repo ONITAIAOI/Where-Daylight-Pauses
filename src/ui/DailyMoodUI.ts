@@ -1,5 +1,4 @@
 import { PlayerProfile, savePlayerProfile } from '../firebase/playerData';
-import { addPlayerItem } from '../utils/inventoryUtils'; // 引入獲得道具工具
 
 export class DailyMoodUI {
     private uid: string;
@@ -231,22 +230,32 @@ export class DailyMoodUI {
                 submitBtn.innerText = '正在整理行囊...';
                 submitBtn.style.opacity = '0.7';
 
-                // 取得今天的日期字串 (YYYY-MM-DD) 作為今日已簽到的憑證
                 const todayStr = new Date().toISOString().split('T')[0];
 
                 this.profile.mood = this.selectedMood;
                 this.profile.item = this.selectedItem;
-                this.profile.lastMoodDate = todayStr; // 寫入今日簽到日期
+                this.profile.lastMoodDate = todayStr;
 
                 try {
-                    // 1. 儲存玩家個人檔案
-                    await savePlayerProfile(this.uid, this.profile);
-
-                    // 2. 找到選擇的信物所對應的圖鑑 ID 並發放到背包中
+                    // 1. 找到選擇的信物所對應的正式圖鑑 ID (例如 item_51)
                     const selectedObj = this.itemOptions.find(i => i.name === this.selectedItem);
-                    if (selectedObj) {
-                        await addPlayerItem(this.uid, selectedObj.id, 1);
+                    const targetId = selectedObj ? selectedObj.id : 'item_51';
+
+                    // 2. 初始化背包陣列
+                    if (!this.profile.inventory) {
+                        this.profile.inventory = [];
                     }
+
+                    // 3. 檢查背包是否已有該道具，有則 count + 1，無則新增
+                    const existingItem = this.profile.inventory.find((i: any) => i.id === targetId);
+                    if (existingItem) {
+                        existingItem.count = (existingItem.count || 1) + 1;
+                    } else {
+                        this.profile.inventory.push({ id: targetId, count: 1 });
+                    }
+
+                    // 4. 儲存玩家個人檔案
+                    await savePlayerProfile(this.uid, this.profile);
 
                     this.showToast(`✨ 今日心境已記錄，並獲得了 ${this.selectedItem}！`);
                     setTimeout(() => {

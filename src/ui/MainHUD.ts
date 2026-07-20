@@ -8,11 +8,12 @@ export interface MainHUDOptions {
     onOpenChat?: () => void;      
     onOpenDiary?: () => void;     
     onOpenSettings?: () => void;  
+    onOpenCreateProfile?: () => void; // 🌟 支援新玩家導向創角的選單回調
 }
 
 export class MainHUD {
-    private profile: PlayerProfile;
-    private authUid: string; // 🌟 接收並鎖定真實的 Firebase Auth UID
+    private profile: PlayerProfile | null;
+    private authUid: string; 
     private options: MainHUDOptions;
     private container: HTMLDivElement | null = null;
     private isToastActive: boolean = false;
@@ -20,13 +21,88 @@ export class MainHUD {
     private chatUI: ChatUI | null = null;
     private restHouseUI: RestHouseUI | null = null;
 
-    constructor(profile: PlayerProfile, authUid: string, options: MainHUDOptions) {
-        this.profile = profile;
+    constructor(profile: PlayerProfile | null, authUid: string, options: MainHUDOptions) {
         this.authUid = authUid;
         this.options = options;
 
+        // 🌟 嚴格防呆：如果 profile 或 nickname 是空的，代表未完成創角，直接攔截避免黑屏
+        if (!profile || !profile.nickname) {
+            console.warn("⚠️ 偵測到新玩家或無效的 profile，正在導向創角介面...");
+            this.handleNewPlayerRedirect();
+            return; 
+        }
+
+        this.profile = profile;
+
+        // 🌟 初始化時執行閒置恢復計算
+        this.processIdleRecovery();
+
         this.injectGlobalStyles();
         this.render();
+    }
+
+    /**
+     * 🌟 處理新玩家尚未創角的跳轉邏輯
+     */
+    private handleNewPlayerRedirect() {
+        if (typeof this.options.onOpenCreateProfile === 'function') {
+            this.options.onOpenCreateProfile();
+        } else {
+            this.showToast("✨ 歡迎來到小鎮，請先建立您的旅人身分。");
+        }
+    }
+
+    /**
+     * 🌟 計算並套用閒置自動恢復三種素質的邏輯
+     * 規則：每閒置 10 分鐘，能量 (+1)、心靈韌性 (+1)、感知力 (+1)
+     * 上限分別為：能量 100，心靈韌性 50，感知力 50（可依需求調整）
+     */
+    private processIdleRecovery() {
+        if (!this.profile) return;
+
+        const now = Date.now();
+        const lastActive = (this.profile as any).lastActiveTime ? new Date((this.profile as any).lastActiveTime).getTime() : now;
+        
+        // 計算離線毫秒差
+        const diffMs = now - lastActive;
+        const tenMinutesMs = 10 * 60 * 1000;
+
+        if (diffMs > tenMinutesMs) {
+            const intervals = Math.floor(diffMs / tenMinutesMs); // 經過了幾個 10 分鐘
+
+            let currentEnergy = (this.profile as any).energy ?? 100;
+            let currentResilience = (this.profile as any).resilience ?? 10;
+            let currentPerception = (this.profile as any).perception ?? 10;
+
+            const oldEnergy = currentEnergy;
+            const oldResilience = currentResilience;
+            const oldPerception = currentPerception;
+
+            // 每個間隔各加 1 點（可依喜好調整成長幅度）
+            currentEnergy = Math.min(100, currentEnergy + intervals * 1);
+            currentResilience = Math.min(50, currentResilience + intervals * 1);
+            currentPerception = Math.min(50, currentPerception + intervals * 1);
+
+            // 更新到 profile 物件中
+            (this.profile as any).energy = currentEnergy;
+            (this.profile as any).resilience = currentResilience;
+            (this.profile as any).perception = currentPerception;
+            (this.profile as any).lastActiveTime = new Date(now).toISOString();
+
+            const gainedEnergy = currentEnergy - oldEnergy;
+            const gainedResilience = currentResilience - oldResilience;
+            const gainedPerception = currentPerception - oldPerception;
+
+            // 如果有數值增長，透過 Toast 溫柔提醒玩家
+            if (gainedEnergy > 0 || gainedResilience > 0 || gainedPerception > 0) {
+                setTimeout(() => {
+                    this.showToast(`🌿 旅人在漫長的靜止中獲得了沉澱：\n能量 +${gainedEnergy} | 心靈韌性 +${gainedResilience} | 感知力 +${gainedPerception}`);
+                }, 600);
+            }
+        } else {
+            // 即使未滿 10 分鐘，也更新最後活躍時間
+            (this.profile as any).lastActiveTime = new Date(now).toISOString();
+        }
     }
 
     private injectGlobalStyles() {
@@ -90,7 +166,16 @@ export class MainHUD {
     }
 
     private render() {
+        if (!this.profile) return;
         this.remove();
+
+        // 取得三種素質的安全數值
+        const energy = (this.profile as any).energy ?? 100;
+        const resilience = (this.profile as any).resilience ?? 10;
+        const perception = (this.profile as any).perception ?? 10;
+
+        // 計算能量條百分比 (上限以 100 為基準)
+        const energyPercent = Math.min(Math.max((energy / 100) * 100, 0), 100);
 
         this.container = document.createElement('div');
         this.container.id = 'main-hud-container';
@@ -111,136 +196,184 @@ export class MainHUD {
                 color: #f3f0ea; overflow: hidden;
                 animation: hudFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
                 box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 92vh;
+                max-height: 94vh;
             ">
                 <!-- 🌅 上方主視覺 Banner 區域 -->
                 <div style="
-                    position: relative; height: 200px;
-                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.4) 50%, #1c1714 100%), 
+                    position: relative; height: 215px;
+                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.5) 60%, #1c1714 100%), 
                                 url('./assets/images/main.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 20px 24px; box-sizing: border-box;
+                    padding: 18px 22px; box-sizing: border-box;
                     overflow: hidden;
                     border-top-left-radius: 24px;
                     border-top-right-radius: 24px;
                 ">
-                    <!-- 💰 上排：幣值顯示列 -->
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; z-index: 1;">
-                        <div style="
-                            background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                            border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 20px;
-                            padding: 4px 12px; display: flex; align-items: center; gap: 6px;
-                            font-size: 12px; font-weight: 600; color: #fde047;
-                        ">
-                            <span>☀️</span> <span>${(this.profile as any).sunCoins ?? 100}</span>
+                    <!-- 💰 上排：幣值顯示列與素質小徽章 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
+                        <!-- 左側：核心素質簡易狀態（心靈韌性 & 感知力） -->
+                        <div style="display: flex; gap: 8px;">
+                            <div style="
+                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
+                                border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 20px;
+                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+                                font-size: 11px; font-weight: 600; color: #34d399;
+                            " title="心靈韌性">
+                                <span>🛡️</span> <span>${resilience}</span>
+                            </div>
+                            <div style="
+                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
+                                border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 20px;
+                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+                                font-size: 11px; font-weight: 600; color: #60a5fa;
+                            " title="感知力">
+                                <span>👁️</span> <span>${perception}</span>
+                            </div>
+                        </div>
+
+                        <!-- 右側：暖陽幣與紀念代幣 -->
+                        <div style="display: flex; gap: 8px;">
+                            <div style="
+                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
+                                border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 20px;
+                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+                                font-size: 11px; font-weight: 600; color: #fde047;
+                            ">
+                                <span>☀️</span> <span>${(this.profile as any).sunCoins ?? 100}</span>
+                            </div>
+                            <div style="
+                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
+                                border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px;
+                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+                                font-size: 11px; font-weight: 600; color: #d8b4fe;
+                            ">
+                                <span>🌟</span> <span>${(this.profile as any).memorialTokens ?? 10}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 中段：專注力 / 能量條 (Energy Bar) -->
+                    <div style="
+                        background: rgba(28, 23, 20, 0.7); backdrop-filter: blur(8px);
+                        border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px;
+                        padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; z-index: 1;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: #a89f91; display: flex; align-items: center; gap: 4px;">
+                                <span>⚡</span> 旅人能量
+                            </span>
+                            <span style="color: #fbbf24; font-weight: 600;">${energy} / 100</span>
                         </div>
                         <div style="
-                            background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                            border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px;
-                            padding: 4px 12px; display: flex; align-items: center; gap: 6px;
-                            font-size: 12px; font-weight: 600; color: #d8b4fe;
+                            width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1);
+                            border-radius: 3px; overflow: hidden; position: relative;
                         ">
-                            <span>🌟</span> <span>${(this.profile as any).memorialTokens ?? 10}</span>
+                            <div style="
+                                width: ${energyPercent}%; height: 100%;
+                                background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+                                border-radius: 3px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+                                transition: width 0.4s ease;
+                            "></div>
                         </div>
                     </div>
 
                     <!-- 下排：玩家稱號與今日心境 -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; z-index: 1;">
                         <div>
-                            <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
+                            <div style="font-size: 10px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                                 WHERE DAYLIGHT PAUSES
                             </div>
-                            <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                                 ${this.profile.nickname}
                             </h1>
                         </div>
                         <div style="
-                            background: rgba(28, 23, 20, 0.7); backdrop-filter: blur(8px);
+                            background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
                             border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 10px;
-                            padding: 6px 10px; text-align: right;
+                            padding: 5px 10px; text-align: right;
                         ">
-                            <div style="font-size: 10px; color: #a89f91;">今日心境</div>
-                            <div style="font-size: 12px; font-weight: 600; color: #eab308;">${(this.profile as any).mood || '平安沉靜'}</div>
+                            <div style="font-size: 9px; color: #a89f91;">今日心境</div>
+                            <div style="font-size: 11px; font-weight: 600; color: #eab308;">${(this.profile as any).mood || '平安沉靜'}</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ☕ 下方小鎮功能選單 -->
-                <div style="padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #1c1714;">
-                    <div style="font-size: 12px; font-weight: 600; color: #a89f91; margin-bottom: -2px; letter-spacing: 0.5px;">
+                <div style="padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; background: #1c1714;">
+                    <div style="font-size: 11px; font-weight: 600; color: #a89f91; margin-bottom: -2px; letter-spacing: 0.5px;">
                         停靠站選單
                     </div>
 
                     <!-- 1. 探索小鎮地圖 -->
                     <div class="station-card" id="btn-town-map" style="
                         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: all 0.2s ease;
+                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #eab308; background: rgba(234,179,8,0.1); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 13px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #eab308; background: rgba(234,179,8,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🧭
                             </div>
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">探索小鎮地圖</div>
-                                <div style="font-size: 12px; color: #a89f91;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
+                                <div style="font-size: 13px; font-weight: 600; color: #fff;">探索小鎮地圖</div>
+                                <div style="font-size: 11px; color: #a89f91;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #eab308; font-weight: 500;">前往 ➔</div>
+                        <div style="font-size: 11px; color: #eab308; font-weight: 500;">前往 ➔</div>
                     </div>
 
                     <!-- 2. 鎮民廣場 -->
                     <div class="station-card" id="btn-chat" style="
                         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: all 0.2s ease;
+                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 13px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 💬
                             </div>
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">鎮民廣場</div>
-                                <div style="font-size: 12px; color: #a89f91;">與其他在小鎮歇腳的旅人聊聊天</div>
+                                <div style="font-size: 13px; font-weight: 600; color: #fff;">鎮民廣場</div>
+                                <div style="font-size: 11px; color: #a89f91;">與其他在小鎮歇腳的旅人聊聊天</div>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #60a5fa; font-weight: 500;">入席 ➔</div>
+                        <div style="font-size: 11px; color: #60a5fa; font-weight: 500;">入席 ➔</div>
                     </div>
 
                     <!-- 3. 旅人行囊 -->
                     <div class="station-card" id="btn-inventory" style="
                         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: all 0.2s ease;
+                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #34d399; background: rgba(52,211,153,0.1); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 13px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #34d399; background: rgba(52,211,153,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🎒
                             </div>
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">旅人行囊</div>
-                                <div style="font-size: 12px; color: #a89f91;">查看隨身信物 (${(this.profile as any).item || '無'}) 與收集的紀念</div>
+                                <div style="font-size: 13px; font-weight: 600; color: #fff;">旅人行囊</div>
+                                <div style="font-size: 11px; color: #a89f91;">查看隨身信物與收集的紀念</div>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #34d399; font-weight: 500;">打開 ➔</div>
+                        <div style="font-size: 11px; color: #34d399; font-weight: 500;">打開 ➔</div>
                     </div>
 
                     <!-- 4. 心境小屋 -->
                     <div class="station-card" id="btn-settings" style="
                         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: all 0.2s ease;
+                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #c084fc; background: rgba(192,132,252,0.1); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 13px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #c084fc; background: rgba(192,132,252,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🍵
                             </div>
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: #fff;">心境小屋</div>
-                                <div style="font-size: 12px; color: #a89f91;">進入小屋深度休息，沉澱並累積暖陽幣</div>
+                                <div style="font-size: 13px; font-weight: 600; color: #fff;">心境小屋</div>
+                                <div style="font-size: 11px; color: #a89f91;">進入小屋深度休息，沉澱並累積暖陽幣</div>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: #c084fc; font-weight: 500;">休憩 ➔</div>
+                        <div style="font-size: 11px; color: #c084fc; font-weight: 500;">休憩 ➔</div>
                     </div>
                 </div>
             </div>
@@ -253,6 +386,7 @@ export class MainHUD {
     private bindEvents() {
         // 1. 探索小鎮地圖
         document.getElementById('btn-town-map')?.addEventListener('click', () => {
+            if (!this.profile) return;
             const restingUntil = (this.profile as any)?.restingUntil ? new Date((this.profile as any).restingUntil).getTime() : 0;
             const now = Date.now();
 
@@ -277,12 +411,13 @@ export class MainHUD {
             if (this.inventoryUI) {
                 this.inventoryUI.remove();
             }
-            this.inventoryUI = new InventoryUI(this.profile as any, () => {
+            const userId = this.authUid || (this.profile as any)?.uid;
+            this.inventoryUI = new InventoryUI(userId, () => {
                 this.inventoryUI = null;
             });
         });
 
-        // 3. 鎮民廣場 (精確傳入正確的 authUid 作為唯一身分識別)
+        // 3. 鎮民廣場
         document.getElementById('btn-chat')?.addEventListener('click', () => {
             if (this.options.onOpenChat) {
                 this.options.onOpenChat();
@@ -293,16 +428,16 @@ export class MainHUD {
                 this.chatUI.remove();
             }
 
-            // 🌟 嚴格使用從主程式綁定的真實 authUid，徹底根絕匿名分身錯亂與重複發送問題
-            const userId = this.authUid || (this.profile as any).uid;
-
+            const userId = this.authUid || (this.profile as any)?.uid;
             console.log(`💬 正在開啟鎮民廣場，本次的身分 UID 鎖定為: [${userId}]`);
 
-            this.chatUI = new ChatUI(
-                userId,
-                this.profile, 
-                () => { this.chatUI = null; }
-            );
+            if (this.profile) {
+                this.chatUI = new ChatUI(
+                    userId,
+                    this.profile, 
+                    () => { this.chatUI = null; }
+                );
+            }
         });
 
         // 4. 心境小屋
@@ -315,7 +450,7 @@ export class MainHUD {
             if (this.restHouseUI) {
                 this.restHouseUI = null;
             }
-            const userId = this.authUid || (this.profile as any).uid || 'default_user';
+            const userId = this.authUid || (this.profile as any)?.uid || 'default_user';
             this.restHouseUI = new RestHouseUI(userId, () => {
                 this.restHouseUI = null;
             });

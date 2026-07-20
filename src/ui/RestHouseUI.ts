@@ -104,7 +104,7 @@ export class RestHouseUI {
                     <!-- 下排：標題與副標 -->
                     <div style="z-index: 1;">
                         <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
-                            WHERE DAYLIGHT PAUSES
+                            SERENE COTTAGE
                         </div>
                         <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                             心境小屋

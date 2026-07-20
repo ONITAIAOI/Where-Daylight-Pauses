@@ -219,6 +219,10 @@ export class CharacterUI {
                         item: '暖心熱茶',
                         sunCoins: intializeCoins(), // 如不需要可直接帶 100
                         memorialTokens: 10,
+                        // 🌟 新增的三種素質預設值
+                        resilience: 10,
+                        perception: 10,
+                        energy: 100,
                         createdAt: new Date().toISOString()
                     };
 

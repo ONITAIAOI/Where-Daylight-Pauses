@@ -1,6 +1,6 @@
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase/config';
-import { getPlayerProfile, savePlayerProfile } from './firebase/playerData';
+import { getPlayerProfile } from './firebase/playerData';
 import { CharacterUI } from './ui/CharacterUI';
 import { DailyMoodUI } from './ui/DailyMoodUI';
 import { MainHUD } from './ui/MainHUD';
@@ -70,47 +70,19 @@ async function loadPlayerProfileFlow(currentUid: string) {
     }
 }
 
-// 啟動每日心境流程（已優化道具接收與背包寫入邏輯）
+// 啟動每日心境流程
 async function startDailyMoodFlow(currentUid: string, profile: any) {
     new DailyMoodUI(currentUid, profile, async (mood, item) => {
         console.log('接收到心境與道具選擇:', { mood, item });
 
-        profile.mood = mood;
-        
-        // 確保道具名稱有被指派
-        const targetItem = item || profile.item || '暖心熱茶';
-        profile.item = targetItem;
-        
-        // 1. 記錄今日簽到日期
-        const todayStr = new Date().toISOString().split('T')[0];
-        profile.lastMoodDate = todayStr;
-
-        // 2. 將選中的隨身道具加入背包 (inventory)
-        if (!profile.inventory) {
-            profile.inventory = [];
-        }
-
-        const existingItem = profile.inventory.find((i: any) => i.id === targetItem);
-        if (existingItem) {
-            existingItem.count = (existingItem.count || 1) + 1; // 已有該道具則數量 +1
-        } else {
-            profile.inventory.push({ id: targetItem, count: 1 });    // 沒有則新增
-        }
-
-        // 3. 儲存最新狀態到 Firebase 資料庫
-        try {
-            await savePlayerProfile(currentUid, profile);
-            console.log('道具已成功存入背包與資料庫！目前背包內容：', profile.inventory);
-        } catch (error) {
-            console.error('儲存每日心境與道具失敗:', error);
-        }
-
-        // 進入遊戲主畫面
-        launchMainHUD(currentUid, profile);
+        // 因為 DailyMoodUI 已經在內部完成存檔與背包寫入，
+        // 這裡直接讀取最新的 profile 確保資料完全同步後進入主畫面
+        const updatedProfile = await getPlayerProfile(currentUid) || profile;
+        launchMainHUD(currentUid, updatedProfile);
     });
 }
 
-// 啟動遊戲主介面（確實傳入 currentUid 讓 MainHUD 與 ChatUI 鎖定身分）
+// 啟動遊戲主介面
 function launchMainHUD(currentUid: string, profile: any) {
     if (mainHUD) {
         mainHUD.remove();
@@ -140,6 +112,12 @@ function launchMainHUD(currentUid: string, profile: any) {
                 if (updatedProfile) {
                     launchMainHUD(currentUid, updatedProfile);
                 }
+            });
+        },
+        onOpenCreateProfile: () => {
+            console.log('從主控台攔截到未創角狀態，啟動創角流程');
+            new CharacterUI(currentUid, (newProfile) => {
+                startDailyMoodFlow(currentUid, newProfile);
             });
         }
     });
