@@ -5,27 +5,36 @@ import { CharacterUI } from './ui/CharacterUI';
 import { DailyMoodUI } from './ui/DailyMoodUI';
 import { MainHUD } from './ui/MainHUD';
 import { TownMapUI } from './ui/TownMapUI';
-import { RestHouseUI } from './ui/RestHouseUI'; // 🌟 1. 匯入休息小屋介面
+import { RestHouseUI } from './ui/RestHouseUI';
 
 let mainHUD: MainHUD | null = null;
-let currentGlobalUid: string | null = null; // 記錄當前登入的 UID 供返回時重新載入用
+let currentGlobalUid: string | null = null;
+let isInitializing = false; // 🔒 防重複觸發鎖
 
-async function initGame() {
+function initGame() {
     console.log('正在進行安全驗證與登入...');
 
     onAuthStateChanged(auth, async (user) => {
+        if (isInitializing) return; // 如果正在初始化中，先略過重複觸發
+
         if (user) {
+            isInitializing = true;
             currentGlobalUid = user.uid;
             console.log('已安全登入，UID:', currentGlobalUid);
-            await loadPlayerProfileFlow(currentGlobalUid);
-        } else {
             try {
-                const credential = await signInAnonymously(auth);
-                currentGlobalUid = credential.user.uid;
-                console.log('匿名登入成功，UID:', currentGlobalUid);
                 await loadPlayerProfileFlow(currentGlobalUid);
+            } finally {
+                isInitializing = false;
+            }
+        } else {
+            isInitializing = true;
+            try {
+                console.log('尚未登入，正在執行匿名登入...');
+                await signInAnonymously(auth);
+                // 登入成功後，onAuthStateChanged 會自動抓到 user 並再次被觸發，因此這裡不用手動呼叫 loadPlayerProfileFlow
             } catch (error) {
                 console.error('Firebase 匿名登入失敗:', error);
+                isInitializing = false;
             }
         }
     });
@@ -90,7 +99,6 @@ function launchMainHUD(currentUid: string, profile: any) {
         onOpenSettings: () => {
             console.log('玩家點擊了：心境小屋');
             
-            // 🌟 2. 串接 RestHouseUI，並在關閉時重新載入最新玩家資料與畫面
             new RestHouseUI(currentUid, async () => {
                 const updatedProfile = await getPlayerProfile(currentUid);
                 if (updatedProfile) {
