@@ -360,6 +360,7 @@ export class RestHouseUI {
             const profile = await getPlayerProfile(this.uid);
             if (!profile) return;
 
+            // 儲存至 equippedChatSkin 欄位
             await savePlayerProfile(this.uid, {
                 ...profile,
                 equippedChatSkin: skinId

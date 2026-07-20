@@ -199,7 +199,7 @@ export class ChatUI {
                 width: 100%;
             `;
 
-            // 🌟 只有「不是自己」的訊息，才顯示上方暱稱（顏色可根據該外觀適度呼應或維持金色）
+            // 🌟 只有「不是自己」的訊息，才顯示上方暱稱
             if (!isMe) {
                 const nameTag = document.createElement('div');
                 nameTag.style.cssText = `
@@ -218,13 +218,11 @@ export class ChatUI {
             bubble.className = 'chat-message-bubble';
             
             if (isMe) {
-                // 🌟 自己發送的訊息：直接套用自己目前選擇的面板泡泡與文字風格
                 bubble.style.cssText += skin.bubbleStyle;
                 if (skin.textStyle) {
                     bubble.style.cssText += skin.textStyle;
                 }
             } else {
-                // 🌟 別人發送的訊息：直接套用該玩家選用的面板風格（讓所有人都能欣賞到彼此買的造型！）
                 bubble.style.cssText += skin.bubbleStyle;
                 if (skin.textStyle) {
                     bubble.style.cssText += skin.textStyle;
@@ -243,8 +241,8 @@ export class ChatUI {
         try {
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
             
-            // 🌟 讀取玩家目前配戴的 skinId（如果沒有就預設為 'default'）
-            const currentSkinId = (this.profile as any).activeChatSkin || (this.profile as any).skinId || 'default';
+            // 🌟 關鍵對齊：讀取 RestHouseUI 寫入的 equippedChatSkin 欄位
+            const currentSkinId = (this.profile as any).equippedChatSkin || 'default';
 
             await addDoc(messagesRef, {
                 uid: this.authUid,
