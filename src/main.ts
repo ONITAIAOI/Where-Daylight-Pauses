@@ -1,0 +1,107 @@
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase/config';
+import { getPlayerProfile } from './firebase/playerData';
+import { CharacterUI } from './ui/CharacterUI';
+import { DailyMoodUI } from './ui/DailyMoodUI';
+import { MainHUD } from './ui/MainHUD';
+import { TownMapUI } from './ui/TownMapUI';
+import { RestHouseUI } from './ui/RestHouseUI'; // 🌟 1. 匯入休息小屋介面
+
+let mainHUD: MainHUD | null = null;
+let currentGlobalUid: string | null = null; // 記錄當前登入的 UID 供返回時重新載入用
+
+async function initGame() {
+    console.log('正在進行安全驗證與登入...');
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentGlobalUid = user.uid;
+            console.log('已安全登入，UID:', currentGlobalUid);
+            await loadPlayerProfileFlow(currentGlobalUid);
+        } else {
+            try {
+                const credential = await signInAnonymously(auth);
+                currentGlobalUid = credential.user.uid;
+                console.log('匿名登入成功，UID:', currentGlobalUid);
+                await loadPlayerProfileFlow(currentGlobalUid);
+            } catch (error) {
+                console.error('Firebase 匿名登入失敗:', error);
+            }
+        }
+    });
+}
+
+// 載入玩家資料流程
+async function loadPlayerProfileFlow(currentUid: string) {
+    try {
+        const profile = await getPlayerProfile(currentUid);
+
+        if (!profile) {
+            console.log('查無玩家資料，導向創角介面');
+            new CharacterUI(currentUid, (newProfile) => {
+                startDailyMoodFlow(currentUid, newProfile);
+            });
+        } else {
+            console.log('已讀取到玩家資料，檢查今日是否已簽到');
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (profile.lastMoodDate === todayStr) {
+                console.log('今日已完成心境簽到，直接進入主畫面');
+                launchMainHUD(currentUid, profile);
+            } else {
+                console.log('今日尚未簽到，開啟每日心境流程');
+                startDailyMoodFlow(currentUid, profile);
+            }
+        }
+    } catch (error) {
+        console.error('讀取旅人資料失敗:', error);
+    }
+}
+
+// 啟動每日心境流程
+function startDailyMoodFlow(currentUid: string, profile: any) {
+    new DailyMoodUI(currentUid, profile, (mood, item) => {
+        profile.mood = mood;
+        profile.item = item;
+        launchMainHUD(currentUid, profile);
+    });
+}
+
+// 啟動遊戲主介面
+function launchMainHUD(currentUid: string, profile: any) {
+    if (mainHUD) {
+        mainHUD.remove();
+    }
+
+    mainHUD = new MainHUD(profile, {
+        onOpenTownMap: () => {
+            console.log('玩家點擊了：探索小鎮地圖');
+            
+            new TownMapUI(
+                (locationId) => {
+                    console.log(`玩家選擇前往區域: ${locationId}`);
+                },
+                () => {
+                    console.log('關閉地圖，返回主控台');
+                }
+            );
+        },
+        onOpenSettings: () => {
+            console.log('玩家點擊了：心境小屋');
+            
+            // 🌟 2. 串接 RestHouseUI，並在關閉時重新載入最新玩家資料與畫面
+            new RestHouseUI(currentUid, async () => {
+                const updatedProfile = await getPlayerProfile(currentUid);
+                if (updatedProfile) {
+                    launchMainHUD(currentUid, updatedProfile);
+                }
+            });
+        }
+    });
+
+    console.log('遊戲主介面已載入！');
+}
+
+// 執行遊戲初始化
+initGame();
