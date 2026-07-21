@@ -51,7 +51,8 @@ export class RestHouseUI {
         const profile = await getPlayerProfile(this.uid);
         if (!profile) return;
 
-        const restingUntil = (profile as any)?.restingUntil ? new Date((profile as any).restingUntil).getTime() : 0;
+        const profileAny = profile as any;
+        const restingUntil = profileAny?.restingUntil ? new Date(profileAny.restingUntil).getTime() : 0;
         const now = Date.now();
         const isResting = restingUntil > now;
 
@@ -96,8 +97,8 @@ export class RestHouseUI {
                         ">⬅ 返回小鎮</button>
 
                         <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 600;">
-                            <span style="color: #eab308;">☀️ ${profile.sunCoins ?? 100}</span>
-                            <span style="color: #38bdf8;">🌟 ${profile.memorialTokens ?? 10}</span>
+                            <span style="color: #eab308;">☀️ ${profileAny.sunCoins ?? 100}</span>
+                            <span style="color: #38bdf8;">🌟 ${profileAny.memorialTokens ?? 10}</span>
                         </div>
                     </div>
 
@@ -174,8 +175,9 @@ export class RestHouseUI {
     }
 
     private renderWardrobeTabContent(profile: PlayerProfile): string {
-        const unlocked = profile.unlockedChatSkins ?? ['default'];
-        const equipped = profile.equippedChatSkin ?? 'default';
+        const profileAny = profile as any;
+        const unlocked = profileAny.unlockedChatSkins ?? ['default'];
+        const equipped = profileAny.equippedChatSkin ?? 'default';
 
         let skinsHTML = '';
         for (const skinId in CHAT_SKINS) {
@@ -364,7 +366,7 @@ export class RestHouseUI {
             await savePlayerProfile(this.uid, {
                 ...profile,
                 equippedChatSkin: skinId
-            });
+            } as any);
 
             this.render();
         } catch (error) {
@@ -380,9 +382,10 @@ export class RestHouseUI {
             const profile = await getPlayerProfile(this.uid);
             if (!profile) return;
 
-            const sunCoins = profile.sunCoins ?? 100;
-            const memorialTokens = profile.memorialTokens ?? 10;
-            const unlocked = profile.unlockedChatSkins ?? ['default'];
+            const profileAny = profile as any;
+            const sunCoins = profileAny.sunCoins ?? 100;
+            const memorialTokens = profileAny.memorialTokens ?? 10;
+            const unlocked = profileAny.unlockedChatSkins ?? ['default'];
 
             if (skin.currency === 'sunCoins' && sunCoins < skin.price) {
                 this.showConfirmModal({
@@ -417,7 +420,7 @@ export class RestHouseUI {
                 memorialTokens: newMemorialTokens,
                 unlockedChatSkins: newUnlocked,
                 equippedChatSkin: skin.id
-            });
+            } as any);
 
             this.showConfirmModal({
                 icon: '✨',
@@ -511,7 +514,8 @@ export class RestHouseUI {
             const profile = await getPlayerProfile(this.uid);
             if (!profile) return;
 
-            const currentCoins = profile.sunCoins ?? 100;
+            const profileAny = profile as any;
+            const currentCoins = profileAny.sunCoins ?? 100;
 
             await savePlayerProfile(this.uid, {
                 ...profile,
