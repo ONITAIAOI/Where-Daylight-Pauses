@@ -23,8 +23,8 @@ export class RestHouseUI {
             style.id = 'rest-house-styles';
             style.innerHTML = `
                 @keyframes restFadeIn {
-                    from { opacity: 0; transform: translateY(12px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes modalFadeIn {
                     from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -42,6 +42,28 @@ export class RestHouseUI {
                     border-color: rgba(234, 179, 8, 0.4) !important;
                     transform: translateY(-2px);
                 }
+
+                /* 🌟 全域隱藏捲動軸 */
+                *::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0px !important;
+                    height: 0px !important;
+                }
+                * {
+                    scrollbar-width: none !important;
+                    -ms-overflow-style: none !important;
+                }
+
+                /* 📱 行動裝置 RWD 完美適配 */
+                @media (max-width: 480px) {
+                    .rest-main-card {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -53,8 +75,9 @@ export class RestHouseUI {
         this.modalBackdrop = document.createElement('div');
         this.modalBackdrop.id = 'custom-modal-backdrop';
         this.modalBackdrop.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: rgba(18, 16, 14, 0.85); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: none; justify-content: center; align-items: center; z-index: 2000;
         `;
         this.modalBackdrop.innerHTML = `
@@ -64,6 +87,7 @@ export class RestHouseUI {
                 border-radius: 20px; padding: 28px; width: 90%; max-width: 360px;
                 box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); text-align: center;
                 animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                box-sizing: border-box;
             ">
                 <div id="modal-icon" style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
                 <h3 id="modal-title" style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #fff;">提示標題</h3>
@@ -75,7 +99,6 @@ export class RestHouseUI {
     }
 
     private async render() {
-        // 清理先前的 container 但保留 modal 與 styles
         if (this.container) {
             this.container.remove();
             this.container = null;
@@ -92,44 +115,46 @@ export class RestHouseUI {
         this.container = document.createElement('div');
         this.container.id = 'rest-house-overlay';
         this.container.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: linear-gradient(135deg, #1f1a17 0%, #12100e 100%);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #f3f0ea; padding: 20px; box-sizing: border-box;
+            color: #f3f0ea; padding: 16px; box-sizing: border-box;
             animation: restFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            overflow: hidden;
         `;
 
         this.container.innerHTML = `
             <!-- 主卡片容器 -->
-            <div style="
+            <div class="rest-main-card" style="
                 position: relative; z-index: 1;
                 background: #1c1714;
                 border: 1px solid rgba(234, 179, 8, 0.2);
                 border-radius: 24px; width: 100%; max-width: 500px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
                 overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 92vh;
+                max-height: 92vh; height: 100%;
             ">
                 <!-- 上方視覺 Header 區 -->
                 <div style="
-                    position: relative; height: 150px;
+                    position: relative; height: 140px; flex-shrink: 0;
                     background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.5) 50%, #1c1714 100%), 
                                 url('./assets/images/RestHouseUI.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 18px 24px; box-sizing: border-box;
+                    padding: 18px 22px; box-sizing: border-box;
                     border-top-left-radius: 24px; border-top-right-radius: 24px;
                 ">
                     <!-- 上排：返回按鈕與貨幣顯示 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
                         <button id="rest-back-btn" style="
                             background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
+                            -webkit-backdrop-filter: blur(8px);
                             border: 1px solid rgba(234, 179, 8, 0.3); color: #fde047;
                             padding: 6px 14px; border-radius: 20px; cursor: pointer;
                             font-size: 12px; font-weight: 600; transition: all 0.2s;
                         ">⬅ 返回小鎮</button>
 
-                        <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 600;">
+                        <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 600;">
                             <span style="color: #eab308;">☀️ ${profileAny.sunCoins ?? 100}</span>
                             <span style="color: #38bdf8;">🌟 ${profileAny.memorialTokens ?? 10}</span>
                         </div>
@@ -140,14 +165,14 @@ export class RestHouseUI {
                         <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                             SERENE COTTAGE
                         </div>
-                        <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                        <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                             心境小屋
                         </h1>
                     </div>
                 </div>
 
                 <!-- 分頁切換 Tab 列 -->
-                <div style="display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); background: #161210;">
+                <div style="display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); background: #161210; flex-shrink: 0;">
                     <button id="tab-rest-btn" style="
                         flex: 1; padding: 12px; background: ${this.activeTab === 'rest' ? '#1c1714' : 'transparent'};
                         border: none; border-bottom: 2px solid ${this.activeTab === 'rest' ? '#eab308' : 'transparent'};
@@ -161,7 +186,7 @@ export class RestHouseUI {
                 </div>
 
                 <!-- 下方內容區 -->
-                <div id="rest-house-body-content" style="padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #1c1714; flex: 1;">
+                <div id="rest-house-body-content" style="padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #1c1714; flex: 1; -webkit-overflow-scrolling: touch;">
                     ${this.activeTab === 'rest' ? this.renderRestTabContent(profile, restingUntil) : this.renderWardrobeTabContent(profile)}
                 </div>
             </div>

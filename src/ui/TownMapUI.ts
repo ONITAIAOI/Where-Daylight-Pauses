@@ -68,12 +68,27 @@ export class TownMapUI {
                     transform: none !important;
                     box-shadow: none !important;
                 }
-                #town-map-content-scroll::-webkit-scrollbar {
-                    width: 4px;
+
+                /* 🌟 全域隱藏捲動軸 */
+                *::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0px !important;
+                    height: 0px !important;
                 }
-                #town-map-content-scroll::-webkit-scrollbar-thumb {
-                    background: rgba(234, 179, 8, 0.2);
-                    border-radius: 4px;
+                * {
+                    scrollbar-width: none !important;
+                    -ms-overflow-style: none !important;
+                }
+
+                /* 📱 行動裝置 RWD 完美適配 */
+                @media (max-width: 480px) {
+                    .town-map-main-card {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
                 }
             `;
             document.head.appendChild(style);
@@ -87,12 +102,12 @@ export class TownMapUI {
         this.overlayContainer = document.createElement('div');
         this.overlayContainer.id = 'town-map-overlay';
         this.overlayContainer.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: rgba(18, 16, 14, 0.85); backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px; box-sizing: border-box;
+            padding: 16px; box-sizing: border-box; overflow: hidden;
         `;
 
         const categoryTitles: { [key: string]: { label: string, icon: string } } = {
@@ -104,19 +119,20 @@ export class TownMapUI {
         const categories = ['town', 'adventure', 'workshop'];
 
         this.overlayContainer.innerHTML = `
-            <div style="
+            <div class="town-map-main-card" style="
                 background: #1c1714;
                 border: 1px solid rgba(234, 179, 8, 0.25);
-                border-radius: 24px; padding: 28px; width: 100%; max-width: 540px;
-                max-height: 90vh;
+                border-radius: 24px; padding: 24px 22px; width: 100%; max-width: 500px;
+                max-height: 92vh; height: 100%;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
                 color: #f3f0ea;
                 animation: mapPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 box-sizing: border-box;
                 display: flex; flex-direction: column; gap: 14px;
+                overflow: hidden;
             ">
                 <!-- 頂部返回按鈕與標籤區 -->
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                     <button id="map-btn-close" style="
                         background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
                         border: 1px solid rgba(234, 179, 8, 0.3); color: #fde047;
@@ -130,7 +146,7 @@ export class TownMapUI {
                 </div>
 
                 <!-- 標題區 -->
-                <div>
+                <div style="flex-shrink: 0;">
                     <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                         EXPLORATION GUIDE
                     </div>
@@ -139,14 +155,15 @@ export class TownMapUI {
                     </h2>
                 </div>
 
-                <p style="margin: 0; font-size: 13px; color: #a89f91; line-height: 1.4;">
+                <p style="margin: 0; font-size: 13px; color: #a89f91; line-height: 1.4; flex-shrink: 0;">
                     隨心所欲散步吧！部分秘境依據日程或天候開放，看看今天哪裡可以去。
                 </p>
 
                 <!-- 地點列表 -->
                 <div id="town-map-content-scroll" style="
                     display: flex; flex-direction: column; gap: 14px; 
-                    overflow-y: auto; padding-right: 4px; max-height: 360px;
+                    overflow-y: auto; flex: 1; padding-right: 2px;
+                    -webkit-overflow-scrolling: touch;
                 ">
                     ${categories.map(catKey => {
                         const catLocations = locations.filter(loc => loc.category === catKey);
@@ -176,7 +193,7 @@ export class TownMapUI {
                                                     <div style="font-size: 12px; color: #a89f91; line-height: 1.3;">${loc.desc}</div>
                                                 </div>
                                             </div>
-                                            <div style="font-size: 11px; font-weight: 500; color: ${loc.active ? '#eab308' : '#a89f91'}; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 8px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.04);">
+                                            <div style="font-size: 11px; font-weight: 500; color: ${loc.active ? '#eab308' : '#a89f91'}; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 8px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.04); flex-shrink: 0;">
                                                 ${loc.status}
                                             </div>
                                         </div>
@@ -192,7 +209,7 @@ export class TownMapUI {
                     background: rgba(234, 179, 8, 0.06);
                     border: 1px dashed rgba(234, 179, 8, 0.3);
                     border-radius: 12px; padding: 10px 14px;
-                    display: flex; align-items: center; gap: 10px;
+                    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
                 ">
                     <span style="font-size: 16px;">💡</span>
                     <div style="font-size: 12px; color: #fde047; line-height: 1.4;">

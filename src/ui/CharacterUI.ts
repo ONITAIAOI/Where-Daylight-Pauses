@@ -4,6 +4,7 @@ export class CharacterUI {
     private uid: string;
     private onComplete: (profile: PlayerProfile) => void;
     private overlayContainer: HTMLDivElement | null = null;
+    private isActionLoading: boolean = false;
 
     // 預設代表色 state
     private selectedColor: string = '#ffb703';
@@ -50,6 +51,24 @@ export class CharacterUI {
                 .char-color-dot:hover {
                     transform: scale(1.15) !important;
                 }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
+                /* 手機螢幕動態適配 */
+                @media (max-width: 480px) {
+                    .char-modal-container {
+                        padding: 24px 20px !important;
+                        border-radius: 20px !important;
+                        max-height: 94dvh !important;
+                        overflow-y: auto !important;
+                    }
+                    .char-avatar {
+                        width: 68px !important;
+                        height: 68px !important;
+                        font-size: 38px !important;
+                        margin-bottom: 12px !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -61,12 +80,12 @@ export class CharacterUI {
         this.overlayContainer = document.createElement('div');
         this.overlayContainer.id = 'character-creation-overlay';
         this.overlayContainer.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(11, 12, 16, 0.8); backdrop-filter: blur(16px);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px; box-sizing: border-box;
+            padding: 16px; box-sizing: border-box;
         `;
 
         this.overlayContainer.innerHTML = `
@@ -76,17 +95,18 @@ export class CharacterUI {
                 display: flex; flex-direction: column; gap: 10px; pointer-events: none;
             "></div>
 
-            <div style="
-                background: rgba(22, 27, 34, 0.85);
+            <div class="char-modal-container no-scrollbar" style="
+                background: rgba(22, 27, 34, 0.9);
                 border: 1px solid rgba(255, 183, 3, 0.25);
                 border-radius: 28px; padding: 36px 32px; width: 100%; max-width: 440px;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
                 color: #f0f6fc; text-align: center;
                 animation: characterPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 box-sizing: border-box;
+                max-height: 90dvh; overflow-y: auto;
             ">
                 <!-- 預覽大頭像 -->
-                <div id="char-avatar-preview" style="
+                <div id="char-avatar-preview" class="char-avatar" style="
                     font-size: 48px; width: 84px; height: 84px; margin: 0 auto 18px auto;
                     border-radius: 50%; display: flex; align-items: center; justify-content: center;
                     background: rgba(255,255,255,0.05); border: 2px solid ${this.selectedColor};
@@ -94,9 +114,9 @@ export class CharacterUI {
                 ">☀️</div>
 
                 <h2 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #fff;">創建旅人名片</h2>
-                <p style="margin: 0 0 28px 0; font-size: 13px; color: #8b949e;">歡迎停靠小鎮，請設定你的專屬個人名片。</p>
+                <p style="margin: 0 0 24px 0; font-size: 13px; color: #8b949e;">歡迎停靠小鎮，請設定你的專屬個人名片。</p>
 
-                <div style="text-align: left; display: flex; flex-direction: column; gap: 20px;">
+                <div style="text-align: left; display: flex; flex-direction: column; gap: 18px;">
                     <!-- 暱稱輸入 -->
                     <div>
                         <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 8px;">
@@ -112,7 +132,7 @@ export class CharacterUI {
 
                     <!-- 光暈主題色選擇 -->
                     <div>
-                        <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 12px;">專屬代表色</label>
+                        <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 10px;">專屬代表色</label>
                         <div style="
                             display: grid; 
                             grid-template-columns: repeat(5, 1fr); 
@@ -136,7 +156,7 @@ export class CharacterUI {
 
                 <!-- 確認建立按鈕 -->
                 <button id="char-btn-submit" style="
-                    width: 100%; margin-top: 32px; padding: 14px;
+                    width: 100%; margin-top: 28px; padding: 14px;
                     background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
                     border: none; border-radius: 12px; color: #0d1117;
                     font-size: 15px; font-weight: 700; cursor: pointer;
@@ -155,6 +175,14 @@ export class CharacterUI {
         if (nicknameInput) {
             nicknameInput.onfocus = () => { nicknameInput.style.borderColor = '#ffb703'; };
             nicknameInput.onblur = () => { nicknameInput.style.borderColor = 'rgba(255, 255, 255, 0.12)'; };
+            
+            // 支援按下 Enter 直接提交
+            nicknameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const submitBtn = document.getElementById('char-btn-submit') as HTMLButtonElement;
+                    if (submitBtn) submitBtn.click();
+                }
+            });
         }
 
         document.querySelectorAll('.char-color-dot').forEach(dot => {
@@ -183,6 +211,7 @@ export class CharacterUI {
         const submitBtn = document.getElementById('char-btn-submit') as HTMLButtonElement;
         if (submitBtn) {
             submitBtn.onclick = async () => {
+                if (this.isActionLoading || !nicknameInput) return;
                 const nickname = nicknameInput.value.trim();
 
                 // 1. 驗證：若未填寫
@@ -193,6 +222,7 @@ export class CharacterUI {
                     return;
                 }
 
+                this.isActionLoading = true;
                 submitBtn.disabled = true;
                 submitBtn.innerText = '正在檢查名稱...';
                 submitBtn.style.opacity = '0.7';
@@ -204,6 +234,7 @@ export class CharacterUI {
                         nicknameInput.style.borderColor = '#ff4d4f';
                         nicknameInput.focus();
                         this.showToast('⚠️ 這個名字已經被其他旅人佔用了，換個名字吧！');
+                        this.isActionLoading = false;
                         submitBtn.disabled = false;
                         submitBtn.innerText = '開啟停靠之旅 ➔';
                         submitBtn.style.opacity = '1';
@@ -217,9 +248,8 @@ export class CharacterUI {
                         avatarColor: this.selectedColor,
                         mood: '平安沉靜',
                         item: '暖心熱茶',
-                        sunCoins: intializeCoins(), // 如不需要可直接帶 100
+                        sunCoins: intializeCoins(),
                         memorialTokens: 10,
-                        // 🌟 新增的三種素質預設值
                         resilience: 10,
                         perception: 10,
                         energy: 100,
@@ -234,6 +264,7 @@ export class CharacterUI {
                 } catch (error) {
                     console.error('儲存旅人資料失敗:', error);
                     this.showToast('❌ 儲存資料時發生錯誤，請稍後再試');
+                    this.isActionLoading = false;
                     submitBtn.disabled = false;
                     submitBtn.innerText = '開啟停靠之旅 ➔';
                     submitBtn.style.opacity = '1';

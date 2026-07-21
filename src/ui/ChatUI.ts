@@ -20,6 +20,7 @@ export class ChatUI {
     private onClose: () => void;
     private container: HTMLDivElement | null = null;
     private unsubscribe: (() => void) | null = null;
+    private isSending: boolean = false; // 防連點旗標
     
     // 固定聊天室 ID（共用大廳）
     private currentChatId: string = 'town_square';
@@ -76,6 +77,23 @@ export class ChatUI {
                     transform: translateY(-1px);
                     box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
                 }
+
+                /* 手機版與極窄螢幕適配 */
+                @media (max-width: 480px) {
+                    .chat-modal-container {
+                        max-width: 100% !important;
+                        height: 94dvh !important;
+                        max-height: none !important;
+                        border-radius: 18px 18px 0 0 !important;
+                        position: absolute !important;
+                        bottom: 0 !important;
+                        margin: 0 !important;
+                    }
+                    .chat-overlay-wrapper {
+                        align-items: flex-end !important;
+                        padding: 0 !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -83,9 +101,10 @@ export class ChatUI {
 
     private render() {
         this.container = document.createElement('div');
+        this.container.className = 'chat-overlay-wrapper';
         this.container.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(14, 12, 10, 0.8); backdrop-filter: blur(8px);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(14, 12, 10, 0.85); backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -93,13 +112,14 @@ export class ChatUI {
         `;
 
         this.container.innerHTML = `
-            <div style="
+            <div class="chat-modal-container" style="
                 background: #1c1714; 
                 border: 1px solid rgba(234, 179, 8, 0.35);
                 border-radius: 20px; width: 100%; max-width: 440px; height: 85vh;
                 max-height: 600px; display: flex; flex-direction: column;
                 box-shadow: 0 25px 60px rgba(0,0,0,0.8); overflow: hidden;
                 animation: chatFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                box-sizing: border-box;
             ">
                 <!-- 標題列 -->
                 <div style="
@@ -286,7 +306,10 @@ export class ChatUI {
     }
 
     private async sendMessage(text: string) {
+        if (this.isSending) return; // 防連點阻擋
+
         try {
+            this.isSending = true;
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
             
             // 🌟 讀取 profile 中記錄的已裝備外觀 ID
@@ -301,6 +324,11 @@ export class ChatUI {
             });
         } catch (error) {
             console.error('發送訊息失敗:', error);
+        } finally {
+            // 釋放防連點限制 (增加短暫冷卻 500ms)
+            setTimeout(() => {
+                this.isSending = false;
+            }, 500);
         }
     }
 

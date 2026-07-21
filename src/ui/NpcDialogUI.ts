@@ -41,7 +41,7 @@ export class NpcDialogUI {
         this.currentChatQuote = this.randomQuotes[randomIndex];
     }
 
-    // 🌟 動態注入視窗動畫 CSS
+    // 🌟 動態注入視窗動畫與 RWD 支援 CSS
     private injectGlobalStyles() {
         if (!document.getElementById('npc-dialog-styles')) {
             const style = document.createElement('style');
@@ -55,6 +55,34 @@ export class NpcDialogUI {
                     filter: brightness(1.15);
                     transform: translateY(-1px);
                 }
+
+                /* 🌟 徹底隱藏全域與對話框內的捲動軸柱子（支援 Chrome, Safari, Firefox, WebView） */
+                *::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0px !important;
+                    height: 0px !important;
+                }
+                * {
+                    scrollbar-width: none !important;
+                    -ms-overflow-style: none !important;
+                }
+
+                @media (max-width: 480px) {
+                    .npc-dialog-card {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                        padding: 24px 18px 18px 18px !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                    }
+                    .npc-dialog-body-scroll {
+                        flex: 1 !important;
+                        overflow-y: auto !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -67,7 +95,7 @@ export class NpcDialogUI {
             return;
         }
 
-        // 🌟 創建全螢幕半透明背景遮罩
+        // 🌟 創建全螢幕半透明背景遮罩（支援 dvh）
         this.overlay = document.createElement('div');
         this.overlay.id = 'npc-dialog-overlay';
         this.overlay.style.cssText = `
@@ -75,7 +103,7 @@ export class NpcDialogUI {
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
             background: rgba(11, 12, 16, 0.75);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -84,8 +112,9 @@ export class NpcDialogUI {
             align-items: center;
             z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            padding: 20px;
+            padding: 16px;
             box-sizing: border-box;
+            overflow: hidden;
         `;
 
         document.body.appendChild(this.overlay);
@@ -99,52 +128,59 @@ export class NpcDialogUI {
 
         // 🌟 核心對話框卡片
         this.overlay.innerHTML = `
-            <div style="
-                background: rgba(22, 27, 34, 0.85);
+            <div class="npc-dialog-card" style="
+                background: rgba(22, 27, 34, 0.92);
                 border: 1px solid rgba(255, 183, 3, 0.25);
                 border-radius: 28px;
-                padding: 32px 28px 28px 28px;
+                padding: 28px 24px 22px 24px;
                 width: 100%;
-                max-width: 480px;
+                max-width: 440px;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
                 position: relative;
                 color: #f0f6fc;
                 animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 box-sizing: border-box;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                max-height: 90vh;
             ">
                 <!-- 右上角關閉按鈕 -->
                 <button id="npc-close-btn" class="npc-dialog-btn" style="
-                    position: absolute; top: 20px; right: 20px;
+                    position: absolute; top: 18px; right: 18px;
                     background: rgba(255,255,255,0.06);
                     border: 1px solid rgba(255,255,255,0.08);
                     border-radius: 50%; width: 34px; height: 34px;
                     color: #8b949e; font-size: 16px; cursor: pointer;
                     display: flex; align-items: center; justify-content: center;
-                    transition: all 0.2s ease;
+                    transition: all 0.2s ease; z-index: 2;
                 ">✕</button>
 
                 <!-- 站長 晨曦 抬頭列 -->
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 18px;">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; flex-shrink: 0;">
                     <div style="
-                        width: 56px; height: 56px; border-radius: 50%;
+                        width: 50px; height: 50px; border-radius: 50%;
                         background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
-                        display: flex; justify-content: center; align-items: center; font-size: 28px;
+                        display: flex; justify-content: center; align-items: center; font-size: 24px;
                         box-shadow: 0 6px 20px rgba(255,183,3,0.35);
                         flex-shrink: 0;
                     ">☕</div>
                     <div>
-                        <div style="font-weight: 700; font-size: 19px; color: #ffb703; letter-spacing: 0.3px;">站長 晨曦</div>
-                        <div style="font-size: 13px; color: #8b949e; margin-top: 2px;">日光停靠站 ｜ 長椅上的傾聽者</div>
+                        <div style="font-weight: 700; font-size: 18px; color: #ffb703; letter-spacing: 0.3px;">站長 晨曦</div>
+                        <div style="font-size: 12px; color: #8b949e; margin-top: 2px;">日光停靠站 ｜ 長椅上的傾聽者</div>
                     </div>
                 </div>
 
-                <!-- 動態頁籤內容 -->
-                <div id="npc-body-content" style="min-height: 180px; font-size: 14px; line-height: 1.6;">
+                <!-- 動態頁籤內容 (支援行動端彈性捲動) -->
+                <div id="npc-body-content" class="npc-dialog-body-scroll" style="
+                    min-height: 160px; font-size: 14px; line-height: 1.6; 
+                    overflow-y: auto; flex: 1; padding-right: 2px;
+                ">
                     ${this.getTabHtml(weather)}
                 </div>
 
                 <!-- 底部頁籤選單 -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; flex-shrink: 0;">
                     <button id="btn-weather" class="npc-dialog-btn" style="${this.getBtnStyle(this.activeTab === 'weather')}">☀️ 今日氣象</button>
                     <button id="btn-quest" class="npc-dialog-btn" style="${this.getBtnStyle(this.activeTab === 'quest')}">📜 停靠告示</button>
                     <button id="btn-item" class="npc-dialog-btn" style="${this.getBtnStyle(this.activeTab === 'item')}">🧳 鑑賞信物</button>
@@ -160,12 +196,12 @@ export class NpcDialogUI {
         switch (this.activeTab) {
             case 'weather':
                 return `
-                    <div style="background: rgba(255, 183, 3, 0.06); padding: 18px; border-radius: 16px; border: 1px solid rgba(255, 183, 3, 0.2);">
-                        <div style="font-size: 17px; font-weight: 700; color: #ffb703; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    <div style="background: rgba(255, 183, 3, 0.06); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 183, 3, 0.2);">
+                        <div style="font-size: 16px; font-weight: 700; color: #ffb703; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                             <span>${weather.icon}</span> ${weather.name}
                         </div>
                         <div style="color: #c9d1d9; margin-bottom: 12px; font-size: 13px;">${weather.desc}</div>
-                        <div style="background: rgba(0,0,0,0.3); padding: 12px 14px; border-radius: 10px; border-left: 3px solid #ffb703;">
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 10px; border-left: 3px solid #ffb703;">
                             <span style="color: #ffb703; font-weight: 600; font-size: 12px;">✨ 今日停靠加成：</span><br>
                             <span style="color: #fff; font-size: 13px;">${weather.buff}</span>
                         </div>
@@ -173,20 +209,20 @@ export class NpcDialogUI {
                 `;
             case 'quest':
                 return `
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div style="font-weight: 700; color: #ffb703; font-size: 14px;">📜 今日的小站告示板</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-weight: 700; color: #ffb703; font-size: 13px; margin-bottom: 2px;">📜 今日的小站告示板</div>
                         ${this.quests.map((q) => `
-                            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 14px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="color: ${q.completed ? '#6e7681' : '#f0f6fc'}; text-decoration: ${q.completed ? 'line-through' : 'none'}; font-size: 13px;">${q.title}</div>
+                            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <div style="flex: 1;">
+                                    <div style="color: ${q.completed ? '#6e7681' : '#f0f6fc'}; text-decoration: ${q.completed ? 'line-through' : 'none'}; font-size: 12px;">${q.title}</div>
                                     <div style="font-size: 11px; color: #ffb703; margin-top: 2px;">獎勵: ${q.reward}</div>
                                 </div>
                                 <button class="quest-claim-btn npc-dialog-btn" data-id="${q.id}" ${q.completed ? 'disabled' : ''} style="
-                                    padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; border: none;
+                                    padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: none;
                                     background: ${q.completed ? 'rgba(255,255,255,0.08)' : '#ffb703'};
                                     color: ${q.completed ? '#6e7681' : '#0d1117'};
                                     cursor: ${q.completed ? 'default' : 'pointer'};
-                                    transition: all 0.2s;
+                                    transition: all 0.2s; flex-shrink: 0;
                                 ">
                                     ${q.completed ? '已完成' : '領取'}
                                 </button>
@@ -196,10 +232,10 @@ export class NpcDialogUI {
                 `;
             case 'item':
                 return `
-                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 18px; border-radius: 16px;">
-                        <div style="font-weight: 700; color: #ffb703; margin-bottom: 8px; font-size: 15px;">🧳 旅人信物鑑賞</div>
-                        <div style="font-size: 14px; color: #f0f6fc;">「你隨身帶著 <span style="color: #ffb703; font-weight: 700;">${this.item}</span> 對吧？」</div>
-                        <div style="margin-top: 10px; color: #8b949e; font-style: italic; font-size: 13px; line-height: 1.6;">
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 16px; border-radius: 16px;">
+                        <div style="font-weight: 700; color: #ffb703; margin-bottom: 6px; font-size: 14px;">🧳 旅人信物鑑賞</div>
+                        <div style="font-size: 13px; color: #f0f6fc;">「你隨身帶著 <span style="color: #ffb703; font-weight: 700;">${this.item}</span> 對吧？」</div>
+                        <div style="margin-top: 8px; color: #8b949e; font-style: italic; font-size: 12px; line-height: 1.5;">
                             晨曦仔細看著你的 ${this.item}，溫柔地笑了笑：「這上面留著時間的味道呢... 在日光停靠站，帶著它能讓你獲得專屬稱號『${this.item}的持有者』。」
                         </div>
                     </div>
@@ -207,14 +243,14 @@ export class NpcDialogUI {
             case 'home':
             default:
                 return `
-                    <div style="background: rgba(255, 183, 3, 0.08); padding: 12px 16px; border-radius: 12px; border-left: 3px solid #ffb703; margin-bottom: 14px; font-size: 13px; color: #c9d1d9;">
+                    <div style="background: rgba(255, 183, 3, 0.08); padding: 10px 14px; border-radius: 12px; border-left: 3px solid #ffb703; margin-bottom: 12px; font-size: 12px; color: #c9d1d9;">
                         歡迎回到日光停靠站，<span style="color: #ffb703; font-weight: 700;">${this.nickname}</span>。今天的心情是「${this.mood}」對吧？
                     </div>
-                    <div style="background: rgba(255, 255, 255, 0.03); padding: 18px; border-radius: 14px; border: 1px dashed rgba(255, 183, 3, 0.25);">
-                        <div style="color: #f0f6fc; font-size: 14px; line-height: 1.7;">
+                    <div style="background: rgba(255, 255, 255, 0.03); padding: 16px; border-radius: 14px; border: 1px dashed rgba(255, 183, 3, 0.25);">
+                        <div style="color: #f0f6fc; font-size: 13px; line-height: 1.6;">
                             「${this.currentChatQuote}」
                         </div>
-                        <div style="text-align: right; margin-top: 12px; font-size: 12px; color: #8b949e;">
+                        <div style="text-align: right; margin-top: 10px; font-size: 11px; color: #8b949e;">
                             —— 站長 晨曦
                         </div>
                     </div>
@@ -223,18 +259,15 @@ export class NpcDialogUI {
     }
 
     private bindEvents() {
-        // 點擊關閉按鈕
         const closeBtn = document.getElementById('npc-close-btn');
         if (closeBtn) closeBtn.onclick = () => this.hideDialog();
 
-        // 點擊背景遮罩也可以關閉（增加流暢體驗）
         if (this.overlay) {
             this.overlay.onclick = (e) => {
                 if (e.target === this.overlay) this.hideDialog();
             };
         }
 
-        // 切換頁籤
         document.getElementById('btn-weather')!.onclick = () => { this.activeTab = 'weather'; this.renderContent(); };
         document.getElementById('btn-quest')!.onclick = () => { this.activeTab = 'quest'; this.renderContent(); };
         document.getElementById('btn-item')!.onclick = () => { this.activeTab = 'item'; this.renderContent(); };
@@ -245,7 +278,6 @@ export class NpcDialogUI {
             this.renderContent(); 
         };
 
-        // 任務領取按鈕
         document.querySelectorAll('.quest-claim-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt((e.target as HTMLElement).getAttribute('data-id') || '0');
@@ -273,7 +305,7 @@ export class NpcDialogUI {
 
     private getBtnStyle(isActive: boolean) {
         return `
-            padding: 12px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s ease;
+            padding: 10px; font-size: 12px; font-weight: 600; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s ease;
             background: ${isActive ? 'linear-gradient(135deg, #ffb703 0%, #fb8500 100%)' : 'rgba(255, 255, 255, 0.05)'};
             color: ${isActive ? '#0d1117' : '#c9d1d9'};
             box-shadow: ${isActive ? '0 4px 14px rgba(255,183,3,0.3)' : 'none'};

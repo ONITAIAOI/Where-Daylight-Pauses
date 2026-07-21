@@ -10,17 +10,17 @@ export class DailyMoodUI {
     private selectedItem: string = '暖心熱茶';
 
     private readonly moodOptions = [
-        { name: '平安沉靜', desc: '心如止水，享受小鎮的微風與慢步調。', icon: '🍵' },
-        { name: '些許疲憊', desc: '今天有點累了，適合找個安靜角落休息。', icon: '🌙' },
-        { name: '期待探險', desc: '充滿好奇心，想發掘小鎮的隱藏角落。', icon: '🧭' },
-        { name: '悠閒隨性', desc: '沒有目的地，走到哪裡就停在哪裡。', icon: '🍃' }
+        { name: '平安沉靜', desc: '心如止水，享受小鎮微風慢步調。', icon: '🍵' },
+        { name: '些許疲憊', desc: '今天有點累了，找個角落休息。', icon: '🌙' },
+        { name: '期待探險', desc: '充滿好奇心，發掘隱藏角落。', icon: '🧭' },
+        { name: '悠閒隨性', desc: '沒有目的地，隨處停留。', icon: '🍃' }
     ];
 
     private readonly itemOptions = [
-        { id: 'item_51', name: '暖心熱茶', desc: '驅散寒意，帶來溫暖的療癒感。' },
-        { id: 'item_52', name: '舊相機', desc: '捕捉沿途的光影與美好瞬間。' },
-        { id: 'item_53', name: '旅行日記', desc: '記錄今天的靈感與心情點滴。' },
-        { id: 'item_54', name: '懷錶', desc: '提醒自己放慢腳步，享受當下。' }
+        { id: 'item_51', name: '暖心熱茶', desc: '驅散寒意，帶來溫暖療癒感。' },
+        { id: 'item_52', name: '舊相機', desc: '捕捉沿途光影與美好瞬間。' },
+        { id: 'item_53', name: '旅行日記', desc: '記錄靈感與心情點滴。' },
+        { id: 'item_54', name: '懷錶', desc: '提醒自己放慢腳步享受當下。' }
     ];
 
     constructor(uid: string, profile: PlayerProfile, onComplete: (mood: string, item: string) => void) {
@@ -47,7 +47,7 @@ export class DailyMoodUI {
         style.id = 'daily-mood-styles';
         style.innerHTML = `
             @keyframes modalPopIn {
-                from { opacity: 0; transform: translateY(20px) scale(0.96); }
+                from { opacity: 0; transform: translateY(15px) scale(0.96); }
                 to { opacity: 1; transform: translateY(0) scale(1); }
             }
             @keyframes toastSlideIn {
@@ -60,10 +60,28 @@ export class DailyMoodUI {
             }
             .mood-card:hover, .item-card:hover {
                 border-color: rgba(255, 183, 3, 0.5) !important;
-                transform: translateY(-2px);
+                transform: translateY(-1px);
             }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
+            /* 針對手機螢幕動態調整邊距與空間，徹底消除壓迫感 */
+            @media (max-width: 480px) {
+                .mood-modal-container {
+                    padding: 24px 18px !important;
+                    border-radius: 20px !important;
+                    max-height: 94dvh !important;
+                }
+                .mood-grid {
+                    gap: 8px !important;
+                }
+                .mood-card {
+                    padding: 10px 10px !important;
+                }
+                .item-card {
+                    padding: 8px 12px !important;
+                }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -74,49 +92,49 @@ export class DailyMoodUI {
 
         this.overlayContainer = document.createElement('div');
         this.overlayContainer.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px); display: flex;
             justify-content: center; align-items: center; z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px; box-sizing: border-box;
+            padding: 12px; box-sizing: border-box;
         `;
 
         this.overlayContainer.innerHTML = `
-            <div id="toast-container" style="position: fixed; top: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
-            <div class="no-scrollbar" style="
-                background: rgba(22, 27, 34, 0.9); border: 1px solid rgba(255, 183, 3, 0.3);
-                border-radius: 28px; padding: 36px 32px; width: 100%; max-width: 520px;
-                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+            <div class="no-scrollbar mood-modal-container" style="
+                background: rgba(22, 27, 34, 0.92); border: 1px solid rgba(255, 183, 3, 0.3);
+                border-radius: 24px; padding: 28px 24px; width: 100%; max-width: 480px;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
                 color: #f0f6fc; text-align: center; animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                box-sizing: border-box; max-height: 90vh; overflow-y: auto;
+                box-sizing: border-box; max-height: 90dvh; overflow-y: auto;
             ">
                 <div style="
-                    width: 56px; height: 56px; margin: 0 auto 12px auto; border-radius: 50%;
+                    width: 48px; height: 48px; margin: 0 auto 10px auto; border-radius: 50%;
                     background: ${this.profile.avatarColor}22; border: 2px solid ${this.profile.avatarColor};
-                    display: flex; align-items: center; justify-content: center; font-size: 24px;
-                    box-shadow: 0 0 16px ${this.profile.avatarColor}44;
+                    display: flex; align-items: center; justify-content: center; font-size: 22px;
+                    box-shadow: 0 0 14px ${this.profile.avatarColor}44;
                 ">${timeInfo.icon}</div>
 
-                <h2 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #fff;">${timeInfo.greeting}，${this.profile.nickname}</h2>
-                <p style="margin: 0 0 24px 0; font-size: 13px; color: #8b949e;">今天的小鎮時光正要開始，告訴我們你現在的心情與隨身信物吧！</p>
+                <h2 style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #fff;">${timeInfo.greeting}，${this.profile.nickname}</h2>
+                <p style="margin: 0 0 18px 0; font-size: 12px; color: #8b949e;">今天的小鎮時光正要開始，告訴我們你現在的心情與隨身信物吧！</p>
 
-                <div style="text-align: left; display: flex; flex-direction: column; gap: 20px;">
+                <div style="text-align: left; display: flex; flex-direction: column; gap: 14px;">
                     <div>
-                        <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 10px;">🌤️ 今日心境</label>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <label style="font-size: 11px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 6px;">🌤️ 今日心境</label>
+                        <div class="mood-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
                             ${this.moodOptions.map(m => {
                                 const isSel = m.name === this.selectedMood;
                                 return `
                                     <div class="mood-card" data-mood="${m.name}" style="
-                                        padding: 12px 14px; border-radius: 14px; cursor: pointer; transition: all 0.2s ease;
+                                        padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
                                         background: ${isSel ? 'rgba(255, 183, 3, 0.15)' : 'rgba(255,255,255,0.03)'};
                                         border: 1px solid ${isSel ? '#ffb703' : 'rgba(255,255,255,0.08)'};
-                                        box-shadow: ${isSel ? '0 0 12px rgba(255, 183, 3, 0.2)' : 'none'};
+                                        box-shadow: ${isSel ? '0 0 10px rgba(255, 183, 3, 0.2)' : 'none'};
                                     ">
-                                        <div style="font-size: 18px; margin-bottom: 4px;">${m.icon}</div>
-                                        <div style="font-size: 13px; font-weight: ${isSel ? '700' : '600'}; color: ${isSel ? '#ffb703' : '#fff'};">${m.name}</div>
-                                        <div style="font-size: 11px; color: #8b949e; margin-top: 2px; line-height: 1.3;">${m.desc}</div>
+                                        <div style="font-size: 16px; margin-bottom: 2px;">${m.icon}</div>
+                                        <div style="font-size: 12px; font-weight: ${isSel ? '700' : '600'}; color: ${isSel ? '#ffb703' : '#fff'};">${m.name}</div>
+                                        <div style="font-size: 10px; color: #8b949e; margin-top: 2px; line-height: 1.2;">${m.desc}</div>
                                     </div>
                                 `;
                             }).join('')}
@@ -124,19 +142,19 @@ export class DailyMoodUI {
                     </div>
 
                     <div>
-                        <label style="font-size: 12px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 10px;">🎒 今日隨身信物</label>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 11px; font-weight: 600; color: #8b949e; display: block; margin-bottom: 6px;">🎒 今日隨身信物</label>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
                             ${this.itemOptions.map(item => {
                                 const isSel = item.name === this.selectedItem;
                                 return `
                                     <div class="item-card" data-item="${item.name}" style="
-                                        padding: 10px 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
+                                        padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;
                                         background: ${isSel ? 'rgba(255, 183, 3, 0.15)' : 'rgba(255,255,255,0.03)'};
                                         border: 1px solid ${isSel ? '#ffb703' : 'rgba(255,255,255,0.08)'};
                                         display: flex; justify-content: space-between; align-items: center;
                                     ">
-                                        <span style="font-size: 13px; font-weight: ${isSel ? '700' : '500'}; color: ${isSel ? '#ffb703' : '#c9d1d9'};">${item.name}</span>
-                                        <span style="font-size: 11px; color: #8b949e;">${item.desc}</span>
+                                        <span style="font-size: 12px; font-weight: ${isSel ? '700' : '500'}; color: ${isSel ? '#ffb703' : '#c9d1d9'};">${item.name}</span>
+                                        <span style="font-size: 10px; color: #8b949e;">${item.desc}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -145,11 +163,11 @@ export class DailyMoodUI {
                 </div>
 
                 <button id="mood-btn-submit" style="
-                    width: 100%; margin-top: 28px; padding: 14px;
+                    width: 100%; margin-top: 20px; padding: 12px;
                     background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
                     border: none; border-radius: 12px; color: #0d1117;
-                    font-size: 15px; font-weight: 700; cursor: pointer;
-                    box-shadow: 0 6px 20px rgba(255, 183, 3, 0.35); transition: all 0.2s;
+                    font-size: 14px; font-weight: 700; cursor: pointer;
+                    box-shadow: 0 6px 16px rgba(255, 183, 3, 0.35); transition: all 0.2s;
                 ">開啟今日小鎮時光 ➔</button>
             </div>
         `;
@@ -165,7 +183,7 @@ export class DailyMoodUI {
                 const isSel = el.getAttribute(attr) === currentVal;
                 el.style.background = isSel ? 'rgba(255, 183, 3, 0.15)' : 'rgba(255,255,255,0.03)';
                 el.style.border = isSel ? '1px solid #ffb703' : '1px solid rgba(255,255,255,0.08)';
-                el.style.boxShadow = selector === '.mood-card' ? (isSel ? '0 0 12px rgba(255, 183, 3, 0.2)' : 'none') : 'none';
+                el.style.boxShadow = selector === '.mood-card' ? (isSel ? '0 0 10px rgba(255, 183, 3, 0.2)' : 'none') : 'none';
                 
                 const titleEl = selector === '.mood-card' 
                     ? el.querySelector('div:nth-child(2)') as HTMLElement
@@ -243,7 +261,7 @@ export class DailyMoodUI {
         toast.style.cssText = `
             pointer-events: auto; background: rgba(22, 27, 34, 0.95);
             border: 1px solid rgba(255, 183, 3, 0.4); border-left: 4px solid #ffb703;
-            border-radius: 12px; padding: 12px 18px; color: #f0f6fc; font-size: 14px;
+            border-radius: 12px; padding: 12px 18px; color: #f0f6fc; font-size: 13px;
             font-weight: 500; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
             animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             display: flex; align-items: center; gap: 8px;

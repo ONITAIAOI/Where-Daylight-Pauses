@@ -147,8 +147,8 @@ export class MainHUD {
             style.id = 'main-hud-styles';
             style.innerHTML = `
                 @keyframes hudFadeIn {
-                    from { opacity: 0; transform: translateY(12px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes toastFadeInTop {
                     from { opacity: 0; transform: translate(-50%, -20px); }
@@ -158,11 +158,17 @@ export class MainHUD {
                     from { opacity: 1; transform: translate(-50%, 0); }
                     to { opacity: 0; transform: translate(-50%, -15px); }
                 }
+                .station-card {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
                 .station-card:hover {
                     border-color: rgba(234, 179, 8, 0.4) !important;
                     background: rgba(234, 179, 8, 0.05) !important;
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+                }
+                .station-card:active {
+                    transform: translateY(0) scale(0.98);
                 }
 
                 /* 🌟 徹底隱藏全域與所有元素的醜醜捲動軸柱子（支援 Chrome, Safari, Firefox, WebView） */
@@ -174,6 +180,16 @@ export class MainHUD {
                 * {
                     scrollbar-width: none !important;
                     -ms-overflow-style: none !important;
+                }
+
+                @media (max-width: 480px) {
+                    .main-hud-panel {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
                 }
             `;
             document.head.appendChild(style);
@@ -190,15 +206,17 @@ export class MainHUD {
         const toast = document.createElement('div');
         toast.id = 'station-toast';
         toast.style.cssText = `
-            position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
             background: rgba(28, 23, 20, 0.95);
             border: 1px solid rgba(234, 179, 8, 0.5);
-            color: #f3f0ea; padding: 14px 26px; border-radius: 14px;
+            color: #f3f0ea; padding: 12px 22px; border-radius: 14px;
             font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
             box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
             z-index: 9999; backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             animation: toastFadeInTop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             white-space: pre-line; text-align: center; line-height: 1.5;
+            max-width: 90vw; box-sizing: border-box;
         `;
         toast.textContent = message;
         document.body.appendChild(toast);
@@ -224,51 +242,50 @@ export class MainHUD {
         this.container = document.createElement('div');
         this.container.id = 'main-hud-container';
         this.container.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: linear-gradient(135deg, #1f1a17 0%, #12100e 100%);
             display: flex; justify-content: center; align-items: center;
             z-index: 900; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 16px; box-sizing: border-box;
+            box-sizing: border-box; overflow: hidden;
         `;
 
         this.container.innerHTML = `
-            <div style="
+            <div class="main-hud-panel" style="
                 background: #1c1714;
                 border: 1px solid rgba(234, 179, 8, 0.2);
-                border-radius: 24px; width: 100%; max-width: 480px;
+                border-radius: 24px; width: 100%; max-width: 440px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-                color: #f3f0ea; overflow: hidden;
+                color: #f3f0ea; display: flex; flex-direction: column;
                 animation: hudFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-                box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 92vh;
+                box-sizing: border-box; height: 100dvh; max-height: 820px;
+                overflow: hidden;
             ">
                 <!-- 🌟 輕量化 BANNER 區塊 -->
                 <div style="
-                    position: relative; height: 250px;
-                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.05) 50%, rgba(28, 23, 20, 0.9) 85%, #1c1714 100%), 
+                    position: relative; height: clamp(185px, 30vh, 230px);
+                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.05) 40%, rgba(28, 23, 20, 0.92) 80%, #1c1714 100%), 
                                 url('./assets/images/main.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 14px 18px; box-sizing: border-box;
-                    overflow: hidden;
-                    border-top-left-radius: 24px;
-                    border-top-right-radius: 24px;
+                    padding: 14px 18px; box-sizing: border-box; flex-shrink: 0;
                 ">
                     <!-- 頂部精簡膠囊資訊列 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
                         <div style="display: flex; gap: 6px;">
                             <div style="
-                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
-                                border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 16px;
+                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                                -webkit-backdrop-filter: blur(6px);
+                                border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 16px;
                                 padding: 3px 8px; display: flex; align-items: center; gap: 4px;
-                                font-size: 10px; font-weight: 600; color: #34d399;
+                                font-size: 11px; font-weight: 600; color: #34d399;
                             " title="心靈韌性">
                                 <span>🛡️</span> <span>${resilience}</span>
                             </div>
                             <div style="
-                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
-                                border: 1px solid rgba(96, 165, 250, 0.25); border-radius: 16px;
+                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                                -webkit-backdrop-filter: blur(6px);
+                                border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 16px;
                                 padding: 3px 8px; display: flex; align-items: center; gap: 4px;
-                                font-size: 10px; font-weight: 600; color: #60a5fa;
+                                font-size: 11px; font-weight: 600; color: #60a5fa;
                             " title="感知力">
                                 <span>👁️</span> <span>${perception}</span>
                             </div>
@@ -276,39 +293,42 @@ export class MainHUD {
 
                         <div style="display: flex; gap: 6px;">
                             <div style="
-                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
-                                border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 16px;
+                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                                -webkit-backdrop-filter: blur(6px);
+                                border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 16px;
                                 padding: 3px 8px; display: flex; align-items: center; gap: 4px;
-                                font-size: 10px; font-weight: 600; color: #fde047;
-                            ">
+                                font-size: 11px; font-weight: 600; color: #fde047;
+                            " title="暖陽幣">
                                 <span>☀️</span> <span>${(this.profile as any).sunCoins ?? 100}</span>
                             </div>
                             <div style="
-                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
-                                border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px;
+                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                                -webkit-backdrop-filter: blur(6px);
+                                border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 16px;
                                 padding: 3px 8px; display: flex; align-items: center; gap: 4px;
-                                font-size: 10px; font-weight: 600; color: #d8b4fe;
-                            ">
+                                font-size: 11px; font-weight: 600; color: #d8b4fe;
+                            " title="紀念代幣">
                                 <span>🌟</span> <span>${(this.profile as any).memorialTokens ?? 10}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- 底部標題與能量條 -->
-                    <div style="display: flex; flex-direction: column; gap: 8px; z-index: 1;">
+                    <div style="display: flex; flex-direction: column; gap: 6px; z-index: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                             <div>
                                 <div style="font-size: 9px; font-weight: 600; color: #eab308; letter-spacing: 1.2px; margin-bottom: 1px;">
                                     WHERE DAYLIGHT PAUSES
                                 </div>
-                                <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
+                                <h1 style="margin: 0; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
                                     ${this.profile.nickname}
                                 </h1>
                             </div>
                             <div style="
-                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
-                                border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 8px;
-                                padding: 3px 8px; text-align: right;
+                                background: rgba(18, 16, 14, 0.75); backdrop-filter: blur(6px);
+                                -webkit-backdrop-filter: blur(6px);
+                                border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 8px;
+                                padding: 2px 8px; text-align: right;
                             ">
                                 <div style="font-size: 8px; color: #a89f91;">今日心境</div>
                                 <div style="font-size: 10px; font-weight: 600; color: #eab308;">${(this.profile as any).mood || '平安沉靜'}</div>
@@ -317,9 +337,10 @@ export class MainHUD {
 
                         <!-- 簡約能量條 -->
                         <div style="
-                            background: rgba(18, 16, 14, 0.75); backdrop-filter: blur(6px);
-                            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px;
-                            padding: 6px 10px; display: flex; flex-direction: column; gap: 4px;
+                            background: rgba(18, 16, 14, 0.8); backdrop-filter: blur(6px);
+                            -webkit-backdrop-filter: blur(6px);
+                            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px;
+                            padding: 5px 10px; display: flex; flex-direction: column; gap: 3px;
                         ">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
                                 <span style="color: #a89f91; display: flex; align-items: center; gap: 3px;">
@@ -343,77 +364,77 @@ export class MainHUD {
                 </div>
 
                 <!-- 下方選單列表 -->
-                <div style="padding: 14px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #1c1714;">
+                <div style="padding: 12px 18px 18px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #1c1714; flex: 1;">
                     <div style="font-size: 10px; font-weight: 600; color: #a89f91; margin-bottom: -2px; letter-spacing: 0.5px;">
                         停靠站選單
                     </div>
 
                     <div class="station-card" id="btn-town-map" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #eab308; background: rgba(234,179,8,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div style="font-size: 14px; color: #eab308; background: rgba(234,179,8,0.1); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 🧭
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #fff;">探索小鎮地圖</div>
-                                <div style="font-size: 10px; color: #a89f91;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px;">探索小鎮地圖</div>
+                                <div style="font-size: 10px; color: #a89f91; line-height: 1.3;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
                             </div>
                         </div>
-                        <div style="font-size: 10px; color: #eab308; font-weight: 500;">前往 ➔</div>
+                        <div style="font-size: 10px; color: #eab308; font-weight: 500; flex-shrink: 0; padding-left: 8px;">前往 ➔</div>
                     </div>
 
                     <div class="station-card" id="btn-chat" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div style="font-size: 14px; color: #60a5fa; background: rgba(96,165,250,0.1); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 💬
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #fff;">鎮民廣場</div>
-                                <div style="font-size: 10px; color: #a89f91;">與其他在小鎮歇腳的旅人聊聊天</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px;">鎮民廣場</div>
+                                <div style="font-size: 10px; color: #a89f91; line-height: 1.3;">與其他在小鎮歇腳的旅人聊聊天</div>
                             </div>
                         </div>
-                        <div style="font-size: 10px; color: #60a5fa; font-weight: 500;">入席 ➔</div>
+                        <div style="font-size: 10px; color: #60a5fa; font-weight: 500; flex-shrink: 0; padding-left: 8px;">入席 ➔</div>
                     </div>
 
                     <div class="station-card" id="btn-inventory" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #34d399; background: rgba(52,211,153,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div style="font-size: 14px; color: #34d399; background: rgba(52,211,153,0.1); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 🎒
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #fff;">旅人行囊</div>
-                                <div style="font-size: 10px; color: #a89f91;">查看隨身信物與收集的紀念</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px;">旅人行囊</div>
+                                <div style="font-size: 10px; color: #a89f91; line-height: 1.3;">查看隨身信物與收集的紀念</div>
                             </div>
                         </div>
-                        <div style="font-size: 10px; color: #34d399; font-weight: 500;">打開 ➔</div>
+                        <div style="font-size: 10px; color: #34d399; font-weight: 500; flex-shrink: 0; padding-left: 8px;">打開 ➔</div>
                     </div>
 
                     <div class="station-card" id="btn-settings" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #c084fc; background: rgba(192,132,252,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <div style="font-size: 14px; color: #c084fc; background: rgba(192,132,252,0.1); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 🍵
                             </div>
                             <div>
-                                <div style="font-size: 12px; font-weight: 600; color: #fff;">心境小屋</div>
-                                <div style="font-size: 10px; color: #a89f91;">進入小屋深度休息，沉澱並累積暖陽幣</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px;">心境小屋</div>
+                                <div style="font-size: 10px; color: #a89f91; line-height: 1.3;">進入小屋深度休息，沉澱並累積暖陽幣</div>
                             </div>
                         </div>
-                        <div style="font-size: 10px; color: #c084fc; font-weight: 500;">休憩 ➔</div>
+                        <div style="font-size: 10px; color: #c084fc; font-weight: 500; flex-shrink: 0; padding-left: 8px;">休憩 ➔</div>
                     </div>
                 </div>
             </div>
