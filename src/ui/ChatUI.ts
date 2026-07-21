@@ -44,12 +44,37 @@ export class ChatUI {
                     to { opacity: 1; transform: scale(1) translateY(0); }
                 }
                 .chat-message-bubble {
-                    max-width: 75%;
+                    max-width: 78%;
                     padding: 10px 14px;
                     border-radius: 14px;
                     font-size: 13px;
-                    line-height: 1.4;
+                    line-height: 1.5;
                     word-break: break-all;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                }
+                /* 自定義美化捲軸 */
+                #chat-messages-area::-webkit-scrollbar {
+                    width: 5px;
+                }
+                #chat-messages-area::-webkit-scrollbar-track {
+                    background: rgba(0, 0, 0, 0.1);
+                }
+                #chat-messages-area::-webkit-scrollbar-thumb {
+                    background: rgba(234, 179, 8, 0.2);
+                    border-radius: 4px;
+                }
+                #chat-messages-area::-webkit-scrollbar-thumb:hover {
+                    background: rgba(234, 179, 8, 0.4);
+                }
+                #chat-input-box:focus {
+                    border-color: rgba(234, 179, 8, 0.6) !important;
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);
+                }
+                .chat-send-btn:hover {
+                    opacity: 0.9;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
                 }
             `;
             document.head.appendChild(style);
@@ -60,7 +85,8 @@ export class ChatUI {
         this.container = document.createElement('div');
         this.container.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+            background: rgba(14, 12, 10, 0.8); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             padding: 16px; box-sizing: border-box;
@@ -68,35 +94,41 @@ export class ChatUI {
 
         this.container.innerHTML = `
             <div style="
-                background: #1c1714; border: 1px solid rgba(234, 179, 8, 0.3);
+                background: #1c1714; 
+                border: 1px solid rgba(234, 179, 8, 0.35);
                 border-radius: 20px; width: 100%; max-width: 440px; height: 85vh;
                 max-height: 600px; display: flex; flex-direction: column;
-                box-shadow: 0 20px 50px rgba(0,0,0,0.7); overflow: hidden;
-                animation: chatFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow: 0 25px 60px rgba(0,0,0,0.8); overflow: hidden;
+                animation: chatFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             ">
                 <!-- 標題列 -->
                 <div style="
-                    padding: 16px 20px; background: rgba(28, 23, 20, 0.95);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    padding: 16px 20px; background: rgba(24, 20, 17, 0.95);
+                    border-bottom: 1px solid rgba(234, 179, 8, 0.15);
                     display: flex; justify-content: space-between; align-items: center;
                 ">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px;">💬</span>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="
+                            width: 36px; height: 36px; border-radius: 10px;
+                            background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25);
+                            display: flex; align-items: center; justify-content: center; font-size: 18px;
+                        ">💬</div>
                         <div>
-                            <div style="font-size: 15px; font-weight: 700; color: #fff;">鎮民廣場</div>
-                            <div style="font-size: 11px; color: #a89f91;">與歇腳的旅人對話 (顯示最近 20 則)</div>
+                            <div style="font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">鎮民廣場</div>
+                            <div style="font-size: 11px; color: #a89f91;">與歇腳的旅人對話（顯示最近 20 則）</div>
                         </div>
                     </div>
                     <button id="btn-close-chat" style="
-                        background: none; border: none; color: #a89f91; font-size: 18px;
-                        cursor: pointer; padding: 4px 8px; border-radius: 6px;
+                        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); 
+                        color: #a89f91; font-size: 14px; width: 30px; height: 30px; border-radius: 50%;
+                        cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
                     ">✕</button>
                 </div>
 
                 <!-- 訊息顯示區 -->
                 <div id="chat-messages-area" style="
-                    flex: 1; padding: 16px; overflow-y: auto; display: flex;
-                    flex-direction: column; gap: 12px; background: #15110e;
+                    flex: 1; padding: 18px; overflow-y: auto; display: flex;
+                    flex-direction: column; gap: 14px; background: #14100d;
                 ">
                     <div style="text-align: center; color: #6b635b; font-size: 12px; margin-top: 10px;">
                         正在連接鎮民廣場...
@@ -105,19 +137,21 @@ export class ChatUI {
 
                 <!-- 輸入送出區 -->
                 <div style="
-                    padding: 14px 16px; background: rgba(28, 23, 20, 0.95);
-                    border-top: 1px solid rgba(255, 255, 255, 0.08);
-                    display: flex; gap: 10px;
+                    padding: 14px 18px; background: rgba(24, 20, 17, 0.95);
+                    border-top: 1px solid rgba(234, 179, 8, 0.15);
+                    display: flex; gap: 10px; align-items: center;
                 ">
                     <input type="text" id="chat-input-box" placeholder="說點溫暖的話吧..." style="
-                        flex: 1; background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;
-                        padding: 10px 14px; color: #fff; font-size: 13px; outline: none;
+                        flex: 1; background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+                        padding: 11px 14px; color: #fff; font-size: 13px; outline: none;
+                        transition: all 0.2s;
                     ">
-                    <button id="btn-send-message" style="
-                        background: #eab308; color: #1c1714; border: none; border-radius: 10px;
-                        padding: 0 16px; font-weight: 600; font-size: 13px; cursor: pointer;
-                        transition: opacity 0.2s;
+                    <button id="btn-send-message" class="chat-send-btn" style="
+                        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); 
+                        color: #1c1714; border: none; border-radius: 12px;
+                        padding: 0 18px; height: 41px; font-weight: 700; font-size: 13px; cursor: pointer;
+                        transition: all 0.2s; box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2);
                     ">發送</button>
                 </div>
             </div>
@@ -133,6 +167,19 @@ export class ChatUI {
         const inputbox = document.getElementById('chat-input-box') as HTMLInputElement;
 
         closeBtn?.addEventListener('click', () => this.remove());
+        
+        // 懸停關閉按鈕時的微互動
+        closeBtn?.addEventListener('mouseenter', () => {
+            closeBtn.style.color = '#fff';
+            closeBtn.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+            closeBtn.style.background = 'rgba(234, 179, 8, 0.1)';
+        });
+        closeBtn?.addEventListener('mouseleave', () => {
+            closeBtn.style.color = '#a89f91';
+            closeBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            closeBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+        });
+
         this.container?.addEventListener('click', (e) => {
             if (e.target === this.container) this.remove();
         });
@@ -177,8 +224,8 @@ export class ChatUI {
 
         if (messages.length === 0) {
             area.innerHTML = `
-                <div style="text-align: center; color: #6b635b; font-size: 12px; margin-top: 20px;">
-                    廣場目前靜悄悄的，留下第一句話吧～
+                <div style="text-align: center; color: #6b635b; font-size: 12px; margin-top: 30px; line-height: 1.6;">
+                    ✨ 廣場目前靜悄悄的<br>留下第一句話來溫暖大家吧～
                 </div>
             `;
             return;
@@ -188,7 +235,7 @@ export class ChatUI {
         messages.forEach((msg) => {
             const isMe = msg.uid === this.authUid;
             
-            // 🌟 取得該則訊息對應的面板外觀設定（若找不到則預設為 default）
+            // 🌟 取得該則訊息對應的外觀設定（若找不到則預設為 default）
             const skinId = msg.skinId || 'default';
             const skin = CHAT_SKINS[skinId] || CHAT_SKINS['default'];
 
@@ -205,9 +252,10 @@ export class ChatUI {
                 nameTag.style.cssText = `
                     font-size: 11px; 
                     color: #eab308; 
-                    margin-bottom: 2px; 
+                    margin-bottom: 3px; 
                     padding: 0 4px;
                     font-weight: 600;
+                    letter-spacing: 0.3px;
                 `;
                 nameTag.textContent = msg.nickname || '善意旅人';
                 wrapper.appendChild(nameTag);
@@ -241,7 +289,7 @@ export class ChatUI {
         try {
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
             
-            // 🌟 關鍵對齊：讀取 RestHouseUI 寫入的 equippedChatSkin 欄位
+            // 🌟 讀取 profile 中記錄的已裝備外觀 ID
             const currentSkinId = (this.profile as any).equippedChatSkin || 'default';
 
             await addDoc(messagesRef, {
@@ -296,6 +344,13 @@ export class ChatUI {
             this.unsubscribe();
             this.unsubscribe = null;
         }
+
+        // 🌟 移除全域注入的 CSS 樣式，防止 DOM 污染與重複堆疊
+        const styleEl = document.getElementById('chat-ui-styles');
+        if (styleEl) {
+            styleEl.remove();
+        }
+
         if (this.container) {
             this.container.remove();
             this.container = null;

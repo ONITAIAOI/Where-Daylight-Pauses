@@ -2,13 +2,15 @@ import { PlayerProfile } from '../firebase/playerData';
 import { InventoryUI } from './InventoryUI';
 import { ChatUI } from './ChatUI';
 import { RestHouseUI } from './RestHouseUI';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 export interface MainHUDOptions {
     onOpenTownMap: () => void;
     onOpenChat?: () => void;      
     onOpenDiary?: () => void;     
     onOpenSettings?: () => void;  
-    onOpenCreateProfile?: () => void; // 🌟 支援新玩家導向創角的選單回調
+    onOpenCreateProfile?: () => void; 
 }
 
 export class MainHUD {
@@ -25,7 +27,6 @@ export class MainHUD {
         this.authUid = authUid;
         this.options = options;
 
-        // 🌟 嚴格防呆：如果 profile 或 nickname 是空的，代表未完成創角，直接攔截避免黑屏
         if (!profile || !profile.nickname) {
             console.warn("⚠️ 偵測到新玩家或無效的 profile，正在導向創角介面...");
             this.handleNewPlayerRedirect();
@@ -34,16 +35,16 @@ export class MainHUD {
 
         this.profile = profile;
 
-        // 🌟 初始化時執行閒置恢復計算
+        // 🌟 初始化時計算離線恢復量
         this.processIdleRecovery();
+
+        // 🌟 綁定跨平台生命週期監聽（手機背景切換、關閉網頁/App）
+        this.initCrossPlatformLifecycle();
 
         this.injectGlobalStyles();
         this.render();
     }
 
-    /**
-     * 🌟 處理新玩家尚未創角的跳轉邏輯
-     */
     private handleNewPlayerRedirect() {
         if (typeof this.options.onOpenCreateProfile === 'function') {
             this.options.onOpenCreateProfile();
@@ -52,23 +53,45 @@ export class MainHUD {
         }
     }
 
-    /**
-     * 🌟 計算並套用閒置自動恢復三種素質的邏輯
-     * 規則：每閒置 10 分鐘，能量 (+1)、心靈韌性 (+1)、感知力 (+1)
-     * 上限分別為：能量 100，心靈韌性 50，感知力 50（可依需求調整）
-     */
+    private initCrossPlatformLifecycle() {
+        if (!this.profile || !this.authUid) return;
+
+        const updateLastActiveTime = async () => {
+            const nowIso = new Date().toISOString();
+            if (this.profile) {
+                (this.profile as any).lastActiveTime = nowIso;
+            }
+
+            try {
+                const docRef = doc(db, 'players', this.authUid);
+                await setDoc(docRef, { lastActiveTime: nowIso }, { merge: true });
+            } catch (error) {
+                console.error("更新最後活躍時間失敗:", error);
+            }
+        };
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                updateLastActiveTime();
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            updateLastActiveTime();
+        });
+    }
+
     private processIdleRecovery() {
         if (!this.profile) return;
 
         const now = Date.now();
         const lastActive = (this.profile as any).lastActiveTime ? new Date((this.profile as any).lastActiveTime).getTime() : now;
         
-        // 計算離線毫秒差
         const diffMs = now - lastActive;
         const tenMinutesMs = 10 * 60 * 1000;
 
         if (diffMs > tenMinutesMs) {
-            const intervals = Math.floor(diffMs / tenMinutesMs); // 經過了幾個 10 分鐘
+            const intervals = Math.floor(diffMs / tenMinutesMs); 
 
             let currentEnergy = (this.profile as any).energy ?? 100;
             let currentResilience = (this.profile as any).resilience ?? 10;
@@ -78,30 +101,43 @@ export class MainHUD {
             const oldResilience = currentResilience;
             const oldPerception = currentPerception;
 
-            // 每個間隔各加 1 點（可依喜好調整成長幅度）
             currentEnergy = Math.min(100, currentEnergy + intervals * 1);
             currentResilience = Math.min(50, currentResilience + intervals * 1);
             currentPerception = Math.min(50, currentPerception + intervals * 1);
 
-            // 更新到 profile 物件中
             (this.profile as any).energy = currentEnergy;
             (this.profile as any).resilience = currentResilience;
             (this.profile as any).perception = currentPerception;
-            (this.profile as any).lastActiveTime = new Date(now).toISOString();
+            
+            const currentIso = new Date(now).toISOString();
+            (this.profile as any).lastActiveTime = currentIso;
+
+            if (this.authUid) {
+                const docRef = doc(db, 'players', this.authUid);
+                setDoc(docRef, { 
+                    energy: currentEnergy, 
+                    resilience: currentResilience, 
+                    perception: currentPerception, 
+                    lastActiveTime: currentIso 
+                }, { merge: true }).catch(err => console.error("同步離線恢復資料失敗:", err));
+            }
 
             const gainedEnergy = currentEnergy - oldEnergy;
             const gainedResilience = currentResilience - oldResilience;
             const gainedPerception = currentPerception - oldPerception;
 
-            // 如果有數值增長，透過 Toast 溫柔提醒玩家
             if (gainedEnergy > 0 || gainedResilience > 0 || gainedPerception > 0) {
                 setTimeout(() => {
                     this.showToast(`🌿 旅人在漫長的靜止中獲得了沉澱：\n能量 +${gainedEnergy} | 心靈韌性 +${gainedResilience} | 感知力 +${gainedPerception}`);
                 }, 600);
             }
         } else {
-            // 即使未滿 10 分鐘，也更新最後活躍時間
-            (this.profile as any).lastActiveTime = new Date(now).toISOString();
+            const currentIso = new Date(now).toISOString();
+            (this.profile as any).lastActiveTime = currentIso;
+            if (this.authUid) {
+                const docRef = doc(db, 'players', this.authUid);
+                setDoc(docRef, { lastActiveTime: currentIso }, { merge: true }).catch(err => console.error("更新最後活躍時間失敗:", err));
+            }
         }
     }
 
@@ -123,10 +159,21 @@ export class MainHUD {
                     to { opacity: 0; transform: translate(-50%, -15px); }
                 }
                 .station-card:hover {
-                    border-color: rgba(234, 179, 8, 0.5) !important;
-                    background: rgba(234, 179, 8, 0.06) !important;
+                    border-color: rgba(234, 179, 8, 0.4) !important;
+                    background: rgba(234, 179, 8, 0.05) !important;
                     transform: translateY(-2px);
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                }
+
+                /* 🌟 徹底隱藏全域與所有元素的醜醜捲動軸柱子（支援 Chrome, Safari, Firefox, WebView） */
+                *::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0px !important;
+                    height: 0px !important;
+                }
+                * {
+                    scrollbar-width: none !important;
+                    -ms-overflow-style: none !important;
                 }
             `;
             document.head.appendChild(style);
@@ -169,12 +216,9 @@ export class MainHUD {
         if (!this.profile) return;
         this.remove();
 
-        // 取得三種素質的安全數值
         const energy = (this.profile as any).energy ?? 100;
         const resilience = (this.profile as any).resilience ?? 10;
         const perception = (this.profile as any).perception ?? 10;
-
-        // 計算能量條百分比 (上限以 100 為基準)
         const energyPercent = Math.min(Math.max((energy / 100) * 100, 0), 100);
 
         this.container = document.createElement('div');
@@ -184,196 +228,192 @@ export class MainHUD {
             background: linear-gradient(135deg, #1f1a17 0%, #12100e 100%);
             display: flex; justify-content: center; align-items: center;
             z-index: 900; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 20px; box-sizing: border-box;
+            padding: 16px; box-sizing: border-box;
         `;
 
         this.container.innerHTML = `
             <div style="
                 background: #1c1714;
                 border: 1px solid rgba(234, 179, 8, 0.2);
-                border-radius: 24px; width: 100%; max-width: 500px;
+                border-radius: 24px; width: 100%; max-width: 480px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
                 color: #f3f0ea; overflow: hidden;
                 animation: hudFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
                 box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 94vh;
+                max-height: 92vh;
             ">
-                <!-- 🌅 上方主視覺 Banner 區域 -->
+                <!-- 🌟 輕量化 BANNER 區塊 -->
                 <div style="
-                    position: relative; height: 215px;
-                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.2) 0%, rgba(28, 23, 20, 0.5) 60%, #1c1714 100%), 
+                    position: relative; height: 250px;
+                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.05) 50%, rgba(28, 23, 20, 0.9) 85%, #1c1714 100%), 
                                 url('./assets/images/main.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 18px 22px; box-sizing: border-box;
+                    padding: 14px 18px; box-sizing: border-box;
                     overflow: hidden;
                     border-top-left-radius: 24px;
                     border-top-right-radius: 24px;
                 ">
-                    <!-- 💰 上排：幣值顯示列與素質小徽章 -->
+                    <!-- 頂部精簡膠囊資訊列 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; z-index: 1;">
-                        <!-- 左側：核心素質簡易狀態（心靈韌性 & 感知力） -->
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 6px;">
                             <div style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 20px;
-                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
-                                font-size: 11px; font-weight: 600; color: #34d399;
+                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
+                                border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 16px;
+                                padding: 3px 8px; display: flex; align-items: center; gap: 4px;
+                                font-size: 10px; font-weight: 600; color: #34d399;
                             " title="心靈韌性">
                                 <span>🛡️</span> <span>${resilience}</span>
                             </div>
                             <div style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 20px;
-                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
-                                font-size: 11px; font-weight: 600; color: #60a5fa;
+                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
+                                border: 1px solid rgba(96, 165, 250, 0.25); border-radius: 16px;
+                                padding: 3px 8px; display: flex; align-items: center; gap: 4px;
+                                font-size: 10px; font-weight: 600; color: #60a5fa;
                             " title="感知力">
                                 <span>👁️</span> <span>${perception}</span>
                             </div>
                         </div>
 
-                        <!-- 右側：暖陽幣與紀念代幣 -->
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 6px;">
                             <div style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 20px;
-                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
-                                font-size: 11px; font-weight: 600; color: #fde047;
+                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
+                                border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 16px;
+                                padding: 3px 8px; display: flex; align-items: center; gap: 4px;
+                                font-size: 10px; font-weight: 600; color: #fde047;
                             ">
                                 <span>☀️</span> <span>${(this.profile as any).sunCoins ?? 100}</span>
                             </div>
                             <div style="
-                                background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                                border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px;
-                                padding: 4px 10px; display: flex; align-items: center; gap: 5px;
-                                font-size: 11px; font-weight: 600; color: #d8b4fe;
+                                background: rgba(18, 16, 14, 0.65); backdrop-filter: blur(6px);
+                                border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px;
+                                padding: 3px 8px; display: flex; align-items: center; gap: 4px;
+                                font-size: 10px; font-weight: 600; color: #d8b4fe;
                             ">
                                 <span>🌟</span> <span>${(this.profile as any).memorialTokens ?? 10}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 中段：專注力 / 能量條 (Energy Bar) -->
-                    <div style="
-                        background: rgba(28, 23, 20, 0.7); backdrop-filter: blur(8px);
-                        border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px;
-                        padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; z-index: 1;
-                    ">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                            <span style="color: #a89f91; display: flex; align-items: center; gap: 4px;">
-                                <span>⚡</span> 旅人能量
-                            </span>
-                            <span style="color: #fbbf24; font-weight: 600;">${energy} / 100</span>
-                        </div>
-                        <div style="
-                            width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1);
-                            border-radius: 3px; overflow: hidden; position: relative;
-                        ">
-                            <div style="
-                                width: ${energyPercent}%; height: 100%;
-                                background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
-                                border-radius: 3px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-                                transition: width 0.4s ease;
-                            "></div>
-                        </div>
-                    </div>
-
-                    <!-- 下排：玩家稱號與今日心境 -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; z-index: 1;">
-                        <div>
-                            <div style="font-size: 10px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
-                                WHERE DAYLIGHT PAUSES
+                    <!-- 底部標題與能量條 -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; z-index: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div>
+                                <div style="font-size: 9px; font-weight: 600; color: #eab308; letter-spacing: 1.2px; margin-bottom: 1px;">
+                                    WHERE DAYLIGHT PAUSES
+                                </div>
+                                <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">
+                                    ${this.profile.nickname}
+                                </h1>
                             </div>
-                            <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                                ${this.profile.nickname}
-                            </h1>
+                            <div style="
+                                background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                                border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 8px;
+                                padding: 3px 8px; text-align: right;
+                            ">
+                                <div style="font-size: 8px; color: #a89f91;">今日心境</div>
+                                <div style="font-size: 10px; font-weight: 600; color: #eab308;">${(this.profile as any).mood || '平安沉靜'}</div>
+                            </div>
                         </div>
+
+                        <!-- 簡約能量條 -->
                         <div style="
-                            background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
-                            border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 10px;
-                            padding: 5px 10px; text-align: right;
+                            background: rgba(18, 16, 14, 0.75); backdrop-filter: blur(6px);
+                            border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px;
+                            padding: 6px 10px; display: flex; flex-direction: column; gap: 4px;
                         ">
-                            <div style="font-size: 9px; color: #a89f91;">今日心境</div>
-                            <div style="font-size: 11px; font-weight: 600; color: #eab308;">${(this.profile as any).mood || '平安沉靜'}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
+                                <span style="color: #a89f91; display: flex; align-items: center; gap: 3px;">
+                                    <span>⚡</span> 旅人能量
+                                </span>
+                                <span style="color: #fbbf24; font-weight: 600;">${energy} / 100</span>
+                            </div>
+                            <div style="
+                                width: 100%; height: 5px; background: rgba(255, 255, 255, 0.1);
+                                border-radius: 2.5px; overflow: hidden; position: relative;
+                            ">
+                                <div style="
+                                    width: ${energyPercent}%; height: 100%;
+                                    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+                                    border-radius: 2.5px; box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+                                    transition: width 0.4s ease;
+                                "></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ☕ 下方小鎮功能選單 -->
-                <div style="padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; background: #1c1714;">
-                    <div style="font-size: 11px; font-weight: 600; color: #a89f91; margin-bottom: -2px; letter-spacing: 0.5px;">
+                <!-- 下方選單列表 -->
+                <div style="padding: 14px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #1c1714;">
+                    <div style="font-size: 10px; font-weight: 600; color: #a89f91; margin-bottom: -2px; letter-spacing: 0.5px;">
                         停靠站選單
                     </div>
 
-                    <!-- 1. 探索小鎮地圖 -->
                     <div class="station-card" id="btn-town-map" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 13px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #eab308; background: rgba(234,179,8,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #eab308; background: rgba(234,179,8,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🧭
                             </div>
                             <div>
-                                <div style="font-size: 13px; font-weight: 600; color: #fff;">探索小鎮地圖</div>
-                                <div style="font-size: 11px; color: #a89f91;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff;">探索小鎮地圖</div>
+                                <div style="font-size: 10px; color: #a89f91;">漫步咖啡館、噴泉與巷弄，尋找日常事件</div>
                             </div>
                         </div>
-                        <div style="font-size: 11px; color: #eab308; font-weight: 500;">前往 ➔</div>
+                        <div style="font-size: 10px; color: #eab308; font-weight: 500;">前往 ➔</div>
                     </div>
 
-                    <!-- 2. 鎮民廣場 -->
                     <div class="station-card" id="btn-chat" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 13px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 💬
                             </div>
                             <div>
-                                <div style="font-size: 13px; font-weight: 600; color: #fff;">鎮民廣場</div>
-                                <div style="font-size: 11px; color: #a89f91;">與其他在小鎮歇腳的旅人聊聊天</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff;">鎮民廣場</div>
+                                <div style="font-size: 10px; color: #a89f91;">與其他在小鎮歇腳的旅人聊聊天</div>
                             </div>
                         </div>
-                        <div style="font-size: 11px; color: #60a5fa; font-weight: 500;">入席 ➔</div>
+                        <div style="font-size: 10px; color: #60a5fa; font-weight: 500;">入席 ➔</div>
                     </div>
 
-                    <!-- 3. 旅人行囊 -->
                     <div class="station-card" id="btn-inventory" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 13px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #34d399; background: rgba(52,211,153,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #34d399; background: rgba(52,211,153,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🎒
                             </div>
                             <div>
-                                <div style="font-size: 13px; font-weight: 600; color: #fff;">旅人行囊</div>
-                                <div style="font-size: 11px; color: #a89f91;">查看隨身信物與收集的紀念</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff;">旅人行囊</div>
+                                <div style="font-size: 10px; color: #a89f91;">查看隨身信物與收集的紀念</div>
                             </div>
                         </div>
-                        <div style="font-size: 11px; color: #34d399; font-weight: 500;">打開 ➔</div>
+                        <div style="font-size: 10px; color: #34d399; font-weight: 500;">打開 ➔</div>
                     </div>
 
-                    <!-- 4. 心境小屋 -->
                     <div class="station-card" id="btn-settings" style="
-                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 12px; padding: 12px 15px; cursor: pointer; transition: all 0.2s ease;
+                        background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all 0.2s ease;
                         display: flex; justify-content: space-between; align-items: center;
                     ">
-                        <div style="display: flex; align-items: center; gap: 13px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #c084fc; background: rgba(192,132,252,0.1); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #c084fc; background: rgba(192,132,252,0.1); width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                 🍵
                             </div>
                             <div>
-                                <div style="font-size: 13px; font-weight: 600; color: #fff;">心境小屋</div>
-                                <div style="font-size: 11px; color: #a89f91;">進入小屋深度休息，沉澱並累積暖陽幣</div>
+                                <div style="font-size: 12px; font-weight: 600; color: #fff;">心境小屋</div>
+                                <div style="font-size: 10px; color: #a89f91;">進入小屋深度休息，沉澱並累積暖陽幣</div>
                             </div>
                         </div>
-                        <div style="font-size: 11px; color: #c084fc; font-weight: 500;">休憩 ➔</div>
+                        <div style="font-size: 10px; color: #c084fc; font-weight: 500;">休憩 ➔</div>
                     </div>
                 </div>
             </div>
@@ -384,7 +424,6 @@ export class MainHUD {
     }
 
     private bindEvents() {
-        // 1. 探索小鎮地圖
         document.getElementById('btn-town-map')?.addEventListener('click', () => {
             if (!this.profile) return;
             const restingUntil = (this.profile as any)?.restingUntil ? new Date((this.profile as any).restingUntil).getTime() : 0;
@@ -399,14 +438,12 @@ export class MainHUD {
             }
 
             if (restingUntil > 0 && restingUntil <= now) {
-                this.showToast(`✨ 你的 8 小時休息已完成！\n請進入「心境小屋」領取 500 暖陽幣獎勵後再行探索。`);
-                return;
+                this.showToast(`✨ 你的 8 小時休息已完成！記得去「心境小屋」領取獎勵喔！`);
             }
 
             this.options.onOpenTownMap();
         });
 
-        // 2. 旅人行囊
         document.getElementById('btn-inventory')?.addEventListener('click', () => {
             if (this.inventoryUI) {
                 this.inventoryUI.remove();
@@ -417,7 +454,6 @@ export class MainHUD {
             });
         });
 
-        // 3. 鎮民廣場
         document.getElementById('btn-chat')?.addEventListener('click', () => {
             if (this.options.onOpenChat) {
                 this.options.onOpenChat();
@@ -429,8 +465,6 @@ export class MainHUD {
             }
 
             const userId = this.authUid || (this.profile as any)?.uid;
-            console.log(`💬 正在開啟鎮民廣場，本次的身分 UID 鎖定為: [${userId}]`);
-
             if (this.profile) {
                 this.chatUI = new ChatUI(
                     userId,
@@ -440,7 +474,6 @@ export class MainHUD {
             }
         });
 
-        // 4. 心境小屋
         document.getElementById('btn-settings')?.addEventListener('click', () => {
             if (this.options.onOpenSettings) {
                 this.options.onOpenSettings();

@@ -18,17 +18,20 @@ export interface PlayerProfile {
     equippedChatSkin?: string;         // 💬 當前裝備的對話框樣式
     unlockedChatSkins?: string[];    // 💬 已解鎖的對話框樣式清單
     
-    // 🌟 新增的三種心靈與探索素質
+    // 🌟 三種心靈與探索素質
     resilience: number;    // 心靈韌性 (影響小屋休息效果/日常恢復)
     perception: number;    // 感知力 (影響小鎮探索、隱藏對話與事件解鎖機率)
     energy: number;        // 專注力/能量 (代表精神狀態，使用道具可恢復)
     
+    // 🌟 跨平台閒置系統與休息計時器
+    lastActiveTime?: string; // 最後活躍 ISO 時間（用於計算離線閒置恢復）
+    restingUntil?: string;   // 深度休息結束的 ISO 時間（用於心境小屋計時）
+
     createdAt?: any;
     updatedAt?: any;
 }
 
 // 🌟 完整道具圖鑑資料庫 (Item Registry)
-// 用來把資料庫裏面的簡單 ID 對照成 UI 需要的名稱、圖示、說明與分類
 export interface ItemDefinition {
     id: string;
     name: string;
@@ -36,7 +39,6 @@ export interface ItemDefinition {
     icon: string;
     desc: string;
     rarity?: 'common' | 'rare' | 'epic';
-    // 🌟 道具產生的素質變動效果
     effect?: {
         resilience?: number;
         perception?: number;
@@ -45,7 +47,11 @@ export interface ItemDefinition {
 }
 
 export const ITEM_DATABASE: Record<string, ItemDefinition> = {
-    'item_1': { id: 'item_1', name: '香濃熱咖啡', category: 'consumable', icon: '☕', desc: '咖啡館特製的熱咖啡，飲用後可恢復些許精神，帶來溫暖。', rarity: 'common' }
+    'item_1': { id: 'item_1', name: '香濃熱咖啡', category: 'consumable', icon: '☕', desc: '咖啡館特製的熱咖啡，飲用後可恢復些許精神，帶來溫暖。', rarity: 'common', effect: { energy: 25 } },
+    'item_2': { id: 'item_2', name: '手作筆記本', category: 'material', icon: '📓', desc: '記錄著日常瑣碎靈感與心情的空白筆記本。', rarity: 'common' },
+    'item_3': { id: 'item_3', name: '暖心茶包', category: 'consumable', icon: '🍵', desc: '散發淡淡甘草香氣的草本茶包，能平靜心靈。', rarity: 'common', effect: { resilience: 15 } },
+    'item_4': { id: 'item_4', name: '老相機底片', category: 'material', icon: '🎞️', desc: '能捕捉小鎮光影與隱藏景致的珍貴底片。', rarity: 'rare', effect: { perception: 10 } },
+    'item_5': { id: 'item_5', name: '微光護身符', category: 'equipment', icon: '🔮', desc: '散發著柔和微光的護身信物，陪伴旅人度過迷惘。', rarity: 'epic', effect: { resilience: 20, perception: 10 } }
 };
 
 // 取得玩家資料
@@ -66,13 +72,14 @@ export async function getPlayerProfile(uid: string): Promise<PlayerProfile | nul
                     { id: 'item_3', count: 1 },
                     { id: 'item_4', count: 1 },
                     { id: 'item_5', count: 5 }
-                ], // 若玩家沒有背包資料，給予預設新手道具
+                ],
                 equippedChatSkin: data.equippedChatSkin ?? 'default',
                 unlockedChatSkins: data.unlockedChatSkins ?? ['default'],
-                // 🌟 素質預設值：心靈韌性預設 10，感知力預設 10，能量/專注力預設 100
                 resilience: data.resilience ?? 10,
                 perception: data.perception ?? 10,
-                energy: data.energy ?? 100
+                energy: data.energy ?? 100,
+                lastActiveTime: data.lastActiveTime ?? new Date().toISOString(),
+                restingUntil: data.restingUntil ?? undefined
             };
         } else {
             return null;
@@ -83,12 +90,12 @@ export async function getPlayerProfile(uid: string): Promise<PlayerProfile | nul
     }
 }
 
-// 🌟 檢查暱稱是否已經被其他玩家註冊過
+// 檢查暱稱是否重複
 export async function checkNicknameExists(nickname: string): Promise<boolean> {
     try {
         const q = query(collection(db, 'players'), where('nickname', '==', nickname));
         const querySnapshot = await getDocs(q);
-        return !querySnapshot.empty; // 如果查到資料代表重複了 (true)
+        return !querySnapshot.empty;
     } catch (error) {
         console.error('檢查暱稱重複失敗:', error);
         throw error;
@@ -109,6 +116,8 @@ export async function savePlayerProfile(uid: string, profile: PlayerProfile): Pr
             resilience: profile.resilience ?? 10,
             perception: profile.perception ?? 10,
             energy: profile.energy ?? 100,
+            lastActiveTime: profile.lastActiveTime ?? new Date().toISOString(),
+            restingUntil: profile.restingUntil ?? null,
             updatedAt: new Date()
         }, { merge: true });
     } catch (error) {

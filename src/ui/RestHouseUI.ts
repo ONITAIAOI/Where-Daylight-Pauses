@@ -4,6 +4,7 @@ import { CHAT_SKINS, ChatSkinConfig } from '../config/chatSkinsConfig';
 export class RestHouseUI {
     private uid: string;
     private container: HTMLDivElement | null = null;
+    private modalBackdrop: HTMLDivElement | null = null;
     private timerInterval: any = null;
     private onBackToMain: () => void;
     private activeTab: 'rest' | 'wardrobe' = 'rest'; // 當前分頁：休息 vs 衣櫥
@@ -12,6 +13,7 @@ export class RestHouseUI {
         this.uid = uid;
         this.onBackToMain = onBackToMain;
         this.injectStyles();
+        this.createModalBackdrop();
         this.render();
     }
 
@@ -45,8 +47,39 @@ export class RestHouseUI {
         }
     }
 
+    private createModalBackdrop() {
+        if (document.getElementById('custom-modal-backdrop')) return;
+
+        this.modalBackdrop = document.createElement('div');
+        this.modalBackdrop.id = 'custom-modal-backdrop';
+        this.modalBackdrop.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(18, 16, 14, 0.85); backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        `;
+        this.modalBackdrop.innerHTML = `
+            <div id="custom-modal-box" style="
+                background: #1c1714;
+                border: 1px solid rgba(234, 179, 8, 0.4);
+                border-radius: 20px; padding: 28px; width: 90%; max-width: 360px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); text-align: center;
+                animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            ">
+                <div id="modal-icon" style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
+                <h3 id="modal-title" style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #fff;">提示標題</h3>
+                <p id="modal-desc" style="margin: 0 0 22px 0; font-size: 13px; color: #a89f91; line-height: 1.6; white-space: pre-line;">提示內容</p>
+                <div id="modal-buttons" style="display: flex; gap: 10px;"></div>
+            </div>
+        `;
+        document.body.appendChild(this.modalBackdrop);
+    }
+
     private async render() {
-        this.remove();
+        // 清理先前的 container 但保留 modal 與 styles
+        if (this.container) {
+            this.container.remove();
+            this.container = null;
+        }
 
         const profile = await getPlayerProfile(this.uid);
         if (!profile) return;
@@ -129,27 +162,7 @@ export class RestHouseUI {
 
                 <!-- 下方內容區 -->
                 <div id="rest-house-body-content" style="padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #1c1714; flex: 1;">
-                    ${this.activeTab === 'rest' ? this.renderRestTabContent(profile, isResting, restingUntil) : this.renderWardrobeTabContent(profile)}
-                </div>
-            </div>
-
-            <!-- 質感自定義彈窗容器 -->
-            <div id="custom-modal-backdrop" style="
-                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                background: rgba(18, 16, 14, 0.85); backdrop-filter: blur(8px);
-                display: none; justify-content: center; align-items: center; z-index: 2000;
-            ">
-                <div id="custom-modal-box" style="
-                    background: #1c1714;
-                    border: 1px solid rgba(234, 179, 8, 0.4);
-                    border-radius: 20px; padding: 28px; width: 90%; max-width: 360px;
-                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8); text-align: center;
-                    animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                ">
-                    <div id="modal-icon" style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
-                    <h3 id="modal-title" style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: #fff;">提示標題</h3>
-                    <p id="modal-desc" style="margin: 0 0 22px 0; font-size: 13px; color: #a89f91; line-height: 1.6; white-space: pre-line;">提示內容</p>
-                    <div id="modal-buttons" style="display: flex; gap: 10px;"></div>
+                    ${this.activeTab === 'rest' ? this.renderRestTabContent(profile, restingUntil) : this.renderWardrobeTabContent(profile)}
                 </div>
             </div>
         `;
@@ -162,14 +175,16 @@ export class RestHouseUI {
         }
     }
 
-    private renderRestTabContent(profile: PlayerProfile, isResting: boolean, restingUntil: number): string {
+    private renderRestTabContent(profile: PlayerProfile, restingUntil: number): string {
+        const hasActiveRest = restingUntil > 0;
+
         return `
             <div style="font-size: 12px; font-weight: 600; color: #a89f91; letter-spacing: 0.5px;">小屋休憩室</div>
             <p style="margin: 0; font-size: 13px; color: #a89f91; line-height: 1.6;">
                 放慢腳步，沈澱心靈。在此沉睡 8 小時可獲得療癒，累積獲得 <span style="color: #eab308; font-weight: 600;">☀️ 500 暖陽幣</span>。
             </p>
             <div id="rest-content-area" style="display: flex; flex-direction: column; gap: 14px;">
-                ${isResting ? this.renderRestingHTML(restingUntil) : this.renderReadyHTML()}
+                ${hasActiveRest ? this.renderRestingHTML(restingUntil) : this.renderReadyHTML()}
             </div>
         `;
     }
@@ -334,7 +349,6 @@ export class RestHouseUI {
             };
         }
 
-        // 綁定裝備外觀按鈕
         const equipBtns = document.querySelectorAll('.equip-skin-btn');
         equipBtns.forEach(btn => {
             (btn as HTMLButtonElement).onclick = async (e) => {
@@ -345,7 +359,6 @@ export class RestHouseUI {
             };
         });
 
-        // 綁定解鎖購買外觀按鈕
         const buyBtns = document.querySelectorAll('.buy-skin-btn');
         buyBtns.forEach(btn => {
             (btn as HTMLButtonElement).onclick = async (e) => {
@@ -362,7 +375,6 @@ export class RestHouseUI {
             const profile = await getPlayerProfile(this.uid);
             if (!profile) return;
 
-            // 儲存至 equippedChatSkin 欄位
             await savePlayerProfile(this.uid, {
                 ...profile,
                 equippedChatSkin: skinId
@@ -409,7 +421,6 @@ export class RestHouseUI {
                 return;
             }
 
-            // 扣除貨幣並加入解鎖清單，順便直接裝備
             const newSunCoins = skin.currency === 'sunCoins' ? sunCoins - skin.price : sunCoins;
             const newMemorialTokens = skin.currency === 'memorialTokens' ? memorialTokens - skin.price : memorialTokens;
             const newUnlocked = [...unlocked, skin.id];
@@ -567,6 +578,10 @@ export class RestHouseUI {
         if (this.container) {
             this.container.remove();
             this.container = null;
+        }
+        if (this.modalBackdrop) {
+            this.modalBackdrop.remove();
+            this.modalBackdrop = null;
         }
     }
 }

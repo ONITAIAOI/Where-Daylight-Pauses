@@ -349,6 +349,13 @@ export class InventoryUI {
     public remove() {
         const toast = document.getElementById('inventory-toast');
         if (toast) toast.remove();
+        
+        // 🌟 移除全域注入的 CSS 樣式，防止 DOM 污染與重複堆疊
+        const styleEl = document.getElementById('inventory-styles');
+        if (styleEl) {
+            styleEl.remove();
+        }
+
         this.removeOverlay();
     }
 }
