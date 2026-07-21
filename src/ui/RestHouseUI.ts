@@ -266,7 +266,7 @@ export class RestHouseUI {
                     z-index: 2;
                 }
                 .phoenix-skin::after {
-                    content: '🐦';
+                    content: '✦';
                     position: absolute;
                     bottom: 15%;
                     left: 10%;

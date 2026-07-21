@@ -322,7 +322,7 @@ export class ChatUI {
                     z-index: 2;
                 }
                 .phoenix-skin::after {
-                    content: '🐦';
+                    content: '✦';
                     position: absolute;
                     bottom: 15%;
                     left: 10%;
@@ -625,7 +625,7 @@ export class ChatUI {
 
             const skinId = msg.skinId || 'default';
             const skin = CHAT_SKINS[skinId] || CHAT_SKINS['default'];
-
+            console.log('📥 訊息 skinId:', skinId, '皮膚物件:', skin);
             const wrapper = document.createElement('div');
             wrapper.style.cssText = `
                 display: flex; flex-direction: column;
@@ -715,6 +715,8 @@ export class ChatUI {
             this.isSending = true;
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
             const currentSkinId = (this.profile as any).equippedChatSkin || 'default';
+        console.log('📤 發送訊息，裝備皮膚 ID:', currentSkinId);
+        console.log('📤 Profile 中的 equippedChatSkin:', (this.profile as any).equippedChatSkin);
 
             await addDoc(messagesRef, {
                 uid: this.authUid,
