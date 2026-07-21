@@ -4,6 +4,7 @@ import { ChatUI } from './ChatUI';
 import { RestHouseUI } from './RestHouseUI';
 import { TownMapUI } from './TownMapUI';
 import { AlchemistWorkshopUI } from './AlchemistWorkshopUI';
+import { getPlayerProfile } from '../firebase/playerData';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -665,9 +666,8 @@ export class MainHUD {
             });
         });
 
-        // 💬 鎮民廣場按鈕（與心境小屋一致）
+        // 💬 鎮民廣場按鈕
         document.getElementById('btn-chat')?.addEventListener('click', () => {
-            // ✅ 如果已有 ChatUI 實例，先關閉
             if (this.chatUI) {
                 this.chatUI.remove();
                 this.chatUI = null;
@@ -679,13 +679,11 @@ export class MainHUD {
                     userId,
                     this.profile,
                     () => {
-                        // ✅ 關閉時清除實例
                         this.chatUI = null;
                     }
                 );
             }
 
-            // ✅ 外部通知（僅用於日誌，不影響內部流程）
             if (this.options.onOpenChat) {
                 this.options.onOpenChat();
             }
@@ -693,11 +691,28 @@ export class MainHUD {
 
         // 🍵 心境小屋按鈕
         document.getElementById('btn-settings')?.addEventListener('click', () => {
+            // ✅ 關閉已打開的 ChatUI（因為它使用舊的 Profile）
+            if (this.chatUI) {
+                this.chatUI.remove();
+                this.chatUI = null;
+            }
+
             if (this.restHouseUI) {
                 this.restHouseUI = null;
             }
             const userId = this.authUid || (this.profile as any)?.uid || 'default_user';
-            this.restHouseUI = new RestHouseUI(userId, () => {
+            this.restHouseUI = new RestHouseUI(userId, async () => {
+                // ✅ 心境小屋關閉時，重新載入最新的 Profile
+                const updatedProfile = await getPlayerProfile(this.authUid);
+                if (updatedProfile) {
+                    this.profile = updatedProfile;
+                    // ✅ 如果有 ChatUI，更新它的 Profile
+                    if (this.chatUI) {
+                        this.chatUI.updateProfile(updatedProfile);
+                    }
+                    // ✅ 更新 MainHUD 顯示
+                    this.render();
+                }
                 this.restHouseUI = null;
             });
 
@@ -766,6 +781,16 @@ export class MainHUD {
                 }
             }
         );
+    }
+
+    // ✅ 新增：更新 Profile（供外部調用）
+    public updateProfile(newProfile: PlayerProfile) {
+        this.profile = newProfile;
+        this.render();
+        // 如果有 ChatUI，也更新它的 Profile
+        if (this.chatUI) {
+            this.chatUI.updateProfile(newProfile);
+        }
     }
 
     public remove() {

@@ -12,7 +12,7 @@ import {
     doc,
     writeBatch
 } from 'firebase/firestore';
-import { PlayerProfile } from '../firebase/playerData';
+import { PlayerProfile, getPlayerProfile } from '../firebase/playerData';
 import { CHAT_SKINS } from '../config/chatSkinsConfig';
 
 // ✨ 安全提示語句
@@ -326,7 +326,7 @@ export class ChatUI {
                     position: absolute;
                     bottom: 15%;
                     left: 10%;
-                    font-size: 16px;
+                    font-size: 14px;
                     opacity: 0.3;
                     animation: meteorShower 3s ease-in-out infinite;
                     pointer-events: none;
@@ -625,7 +625,7 @@ export class ChatUI {
 
             const skinId = msg.skinId || 'default';
             const skin = CHAT_SKINS[skinId] || CHAT_SKINS['default'];
-            console.log('📥 訊息 skinId:', skinId, '皮膚物件:', skin);
+
             const wrapper = document.createElement('div');
             wrapper.style.cssText = `
                 display: flex; flex-direction: column;
@@ -708,15 +708,24 @@ export class ChatUI {
         area.scrollTop = area.scrollHeight;
     }
 
+    // ✅ 修改：發送訊息時重新讀取最新的 Profile
     private async sendMessage(text: string) {
         if (this.isSending) return;
 
         try {
             this.isSending = true;
+
+            // ✅ 重新讀取最新的 Profile（確保皮膚是最新的）
+            const latestProfile = await getPlayerProfile(this.authUid);
+            if (latestProfile) {
+                this.profile = latestProfile;
+            }
+
             const messagesRef = collection(db, 'chats', this.currentChatId, 'messages');
             const currentSkinId = (this.profile as any).equippedChatSkin || 'default';
-        console.log('📤 發送訊息，裝備皮膚 ID:', currentSkinId);
-        console.log('📤 Profile 中的 equippedChatSkin:', (this.profile as any).equippedChatSkin);
+
+            console.log('📤 發送訊息，裝備皮膚 ID:', currentSkinId);
+            console.log('📤 Profile 中的 equippedChatSkin:', (this.profile as any).equippedChatSkin);
 
             await addDoc(messagesRef, {
                 uid: this.authUid,
@@ -735,6 +744,11 @@ export class ChatUI {
                 this.isSending = false;
             }, 500);
         }
+    }
+
+    // ✅ 新增：更新 Profile（供 MainHUD 調用）
+    public updateProfile(newProfile: PlayerProfile) {
+        this.profile = newProfile;
     }
 
     private addToBackupBuffer(text: string, skinId: string) {
