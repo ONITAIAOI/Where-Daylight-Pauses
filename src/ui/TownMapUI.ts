@@ -5,31 +5,23 @@ export class TownMapUI {
 
     private getLocationsWithDynamicStatus() {
         const now = new Date();
-        const dayOfWeek = now.getDay(); // 0 (週日) 到 6 (週六)
-        const dateOfMonth = now.getDate(); // 當月幾號 (1-31)
+        const dayOfWeek = now.getDay();
+        const dateOfMonth = now.getDate();
 
-        // 規則 1：迷霧森林 -> 每週固定時間開放 (設定為週三、週六、週日開放)
         const isForestOpen = [0, 3, 6].includes(dayOfWeek);
-
-        // 規則 2：失落遺跡 -> 隨機時間開放 (用當天日期算取一個穩定的開關，確保今天整天狀態固定)
-        const isRuinsOpen = (dateOfMonth * 7) % 3 === 0; // 用簡單的數學基數模擬每日隨機，但當天不變
+        const isRuinsOpen = (dateOfMonth * 7) % 3 === 0;
 
         return [
-            // 🏠 城鎮日常與設施 (每天固定開放)
             { id: 'terminal', code: '01', name: '小鎮公告欄', desc: '查看最新佈告與解鎖日常任務的樞紐', status: '今日熱鬧', category: 'town', active: true },
             { id: 'cafe', code: '02', name: '寧靜咖啡館', desc: '歇腳、喝杯熱茶與交換情報的集散地', status: '營業中', category: 'town', active: true },
             { id: 'fountain', code: '03', name: '中央記憶噴泉', desc: '鎮民聚集許願與流傳傳說之處', status: '微風徐徐', category: 'town', active: true },
             { id: 'shop', code: '04', name: '時光雜貨舖', desc: '販售各式日常道具、特產與實用小物的地方', status: '營業中', category: 'town', active: true },
             { id: 'treehouse', code: '05', name: '許願樹屋', desc: '座落在大樹上的休憩所，適合沉澱心靈', status: '微光', category: 'town', active: true },
             { id: 'gallery', code: '06', name: '記憶迴廊', desc: '收藏過往點滴、回顧小鎮故事的藝廊', status: '靜謐', category: 'town', active: true },
-
-            // 🧭 戶外探險與委託 (依規則判定)
-            { id: 'alley', code: '07', name: '老街巷弄', desc: '充滿未知的舊街區，常有意外收穫', status: '可探索', category: 'adventure', active: true }, // 每天固定開
+            { id: 'alley', code: '07', name: '老街巷弄', desc: '充滿未知的舊街區，常有意外收穫', status: '可探索', category: 'adventure', active: true },
             { id: 'forest', code: '08', name: '呢喃迷霧森林', desc: '樹影婆娑的神秘林道，適合採集稀有素材 (每週三、六、日開放)', status: isForestOpen ? '可進入' : '今日休養', category: 'adventure', active: isForestOpen },
             { id: 'ruins', code: '09', name: '失落遺跡', desc: '埋藏著古老文明與危險挑戰的禁忌之地 (隨機時間開放)', status: isRuinsOpen ? '高風險' : '遺跡封印中', category: 'adventure', active: isRuinsOpen },
-            { id: 'guild', code: '10', name: '冒險者工會', desc: '接受委託、挑戰各種冒險任務的地方', status: '開放中', category: 'adventure', active: true }, // 每天固定開
-
-            // ⚗️ 專業工坊與合成 (每天固定開放)
+            { id: 'guild', code: '10', name: '冒險者工會', desc: '接受委託、挑戰各種冒險任務的地方', status: '開放中', category: 'adventure', active: true },
             { id: 'alchemist', code: '11', name: '星塵鍊金工房', desc: '將收集到的各種素材與道具進行合成與轉化', status: '營業中', category: 'workshop', active: true }
         ];
     }
@@ -69,7 +61,6 @@ export class TownMapUI {
                     box-shadow: none !important;
                 }
 
-                /* 🌟 全域隱藏捲動軸 */
                 *::-webkit-scrollbar {
                     display: none !important;
                     width: 0px !important;
@@ -80,7 +71,6 @@ export class TownMapUI {
                     -ms-overflow-style: none !important;
                 }
 
-                /* 📱 行動裝置 RWD 完美適配 */
                 @media (max-width: 480px) {
                     .town-map-main-card {
                         max-width: 100% !important;
@@ -131,7 +121,6 @@ export class TownMapUI {
                 display: flex; flex-direction: column; gap: 14px;
                 overflow: hidden;
             ">
-                <!-- 頂部返回按鈕與標籤區 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                     <button id="map-btn-close" style="
                         background: rgba(28, 23, 20, 0.75); backdrop-filter: blur(8px);
@@ -145,7 +134,6 @@ export class TownMapUI {
                     </div>
                 </div>
 
-                <!-- 標題區 -->
                 <div style="flex-shrink: 0;">
                     <div style="font-size: 11px; font-weight: 600; color: #eab308; letter-spacing: 1.5px; margin-bottom: 2px;">
                         EXPLORATION GUIDE
@@ -159,7 +147,6 @@ export class TownMapUI {
                     隨心所欲散步吧！部分秘境依據日程或天候開放，看看今天哪裡可以去。
                 </p>
 
-                <!-- 地點列表 -->
                 <div id="town-map-content-scroll" style="
                     display: flex; flex-direction: column; gap: 14px; 
                     overflow-y: auto; flex: 1; padding-right: 2px;
@@ -184,7 +171,7 @@ export class TownMapUI {
                                             cursor: pointer; transition: all 0.2s ease;
                                             display: flex; justify-content: space-between; align-items: center;
                                         ">
-                                            <div style="display: flex; align-items: center; gap: 14px;">
+                                            <div style="display: flex; align-items: center; gap: 14px; pointer-events: none;">
                                                 <div style="font-size: 13px; font-weight: 700; color: #eab308; background: rgba(234,179,8,0.1); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(234, 179, 8, 0.2); flex-shrink: 0;">
                                                     ${loc.code}
                                                 </div>
@@ -193,7 +180,7 @@ export class TownMapUI {
                                                     <div style="font-size: 12px; color: #a89f91; line-height: 1.3;">${loc.desc}</div>
                                                 </div>
                                             </div>
-                                            <div style="font-size: 11px; font-weight: 500; color: ${loc.active ? '#eab308' : '#a89f91'}; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 8px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.04); flex-shrink: 0;">
+                                            <div style="font-size: 11px; font-weight: 500; color: ${loc.active ? '#eab308' : '#a89f91'}; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 8px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.04); flex-shrink: 0; pointer-events: none;">
                                                 ${loc.status}
                                             </div>
                                         </div>
@@ -204,7 +191,6 @@ export class TownMapUI {
                     }).join('')}
                 </div>
 
-                <!-- 溫馨小 TIP 提示列 -->
                 <div style="
                     background: rgba(234, 179, 8, 0.06);
                     border: 1px dashed rgba(234, 179, 8, 0.3);
@@ -224,28 +210,50 @@ export class TownMapUI {
     }
 
     private bindEvents() {
-        document.querySelectorAll('.town-location-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const target = e.currentTarget as HTMLElement;
-                const isActive = target.getAttribute('data-active') === 'true';
-                
-                if (!isActive) {
-                    return; // 休息中或未開放的地點無法點擊進入
-                }
+        if (!this.overlayContainer) return;
 
-                const locId = target.getAttribute('data-id') || '';
-                this.onSelectLocation(locId);
-                this.remove();
-            });
-        });
-
-        const closeBtn = document.getElementById('map-btn-close');
-        if (closeBtn) {
-            closeBtn.onclick = () => {
+        // ✅ 方式一：使用事件委託 + 阻止冒泡，確保只觸發一次
+        this.overlayContainer.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            
+            // 關閉按鈕
+            if (target.id === 'map-btn-close' || target.closest('#map-btn-close')) {
                 this.onClose();
                 this.remove();
-            };
-        }
+                e.stopPropagation();
+                return;
+            }
+
+            // ✅ 查找被點擊的卡片（使用 closest 確保點擊到子元素也能命中）
+            const card = target.closest('.town-location-card') as HTMLElement;
+            if (!card) return;
+
+            // ✅ 阻止事件冒泡，避免被其他監聽器攔截
+            e.stopPropagation();
+
+            const isActive = card.getAttribute('data-active') === 'true';
+            if (!isActive) {
+                // 未開放的地點給予輕微回饋
+                this.showUnavailableFeedback(card);
+                return;
+            }
+
+            const locId = card.getAttribute('data-id') || '';
+            if (locId) {
+                this.onSelectLocation(locId);
+                this.remove();
+            }
+        });
+    }
+
+    // ✅ 新增：未開放地點的視覺回饋（可選）
+    private showUnavailableFeedback(card: HTMLElement) {
+        const originalBorder = card.style.borderColor;
+        card.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        card.style.transition = 'border-color 0.2s';
+        setTimeout(() => {
+            card.style.borderColor = originalBorder || 'rgba(255, 255, 255, 0.06)';
+        }, 400);
     }
 
     public remove() {
