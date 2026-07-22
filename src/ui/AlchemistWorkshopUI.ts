@@ -55,8 +55,23 @@ export class AlchemistWorkshopUI {
         try {
             const profile = await getPlayerProfile(this.userId);
             if (profile) {
-                this.playerInventory = (profile as any).inventory || {};
+                const rawInventory = (profile as any).inventory || {};
+                
+                if (Array.isArray(rawInventory)) {
+                    this.playerInventory = {};
+                    for (const item of rawInventory) {
+                        const id = item.id || item.itemId;
+                        if (id) {
+                            this.playerInventory[id] = (this.playerInventory[id] || 0) + (item.count || 1);
+                        }
+                    }
+                } else {
+                    this.playerInventory = rawInventory;
+                }
+                
                 this.currentMood = (profile as any).mood || '平安沉靜';
+                
+                console.log('📦 已載入背包 (物件格式):', this.playerInventory);
             }
         } catch (error) {
             console.error('讀取玩家資料失敗:', error);
@@ -165,7 +180,6 @@ export class AlchemistWorkshopUI {
         }
     }
 
-    // ✅ Toast 移到頂部
     private showToast(message: string, isSuccess: boolean = true) {
         const toast = document.createElement('div');
         toast.style.cssText = `
@@ -425,7 +439,18 @@ export class AlchemistWorkshopUI {
                 return;
             }
 
-            const inventory = (profile as any).inventory || {};
+            // ✅ 同時支援陣列和物件格式
+            let inventory = (profile as any).inventory || {};
+            if (Array.isArray(inventory)) {
+                const invObj: Record<string, number> = {};
+                for (const item of inventory) {
+                    const id = item.id || item.itemId;
+                    if (id) {
+                        invObj[id] = (invObj[id] || 0) + (item.count || 1);
+                    }
+                }
+                inventory = invObj;
+            }
             
             const allEnough = recipe.materials.every(mat => (inventory[mat.itemId] || 0) >= mat.count);
             if (!allEnough) {
@@ -456,13 +481,20 @@ export class AlchemistWorkshopUI {
                 updatedInventory[recipeId] = (updatedInventory[recipeId] || 0) + 1;
             }
 
+            // ✅ 轉回陣列格式儲存（明確指定 count 為 number）
+            const inventoryArray = Object.entries(updatedInventory).map(([id, count]) => ({
+                id: id,
+                count: count as number
+            }));
+
             const updatedProfile = {
                 ...profile,
-                inventory: updatedInventory
+                inventory: inventoryArray
             };
 
             await savePlayerProfile(this.userId, updatedProfile);
 
+            // ✅ 更新本地為物件格式方便比對
             this.playerInventory = updatedInventory;
 
             if (isSuccess) {

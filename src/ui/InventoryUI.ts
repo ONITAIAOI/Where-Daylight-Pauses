@@ -80,6 +80,7 @@ export class InventoryUI {
                     cursor: pointer;
                     transition: all 0.2s ease;
                     overflow: hidden;
+                    flex-shrink: 0;
                 }
                 .inv-list-item:hover {
                     border-color: rgba(234, 179, 8, 0.25);
@@ -140,7 +141,6 @@ export class InventoryUI {
                 .inv-list-item .item-rarity.rare { color: #60a5fa; background: rgba(96, 165, 250, 0.08); }
                 .inv-list-item .item-rarity.epic { color: #d8b4fe; background: rgba(216, 180, 254, 0.08); }
 
-                /* ✅ 展開的詳情區 */
                 .inv-item-detail {
                     padding: 0 12px 12px 12px;
                     animation: detailExpand 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -198,6 +198,7 @@ export class InventoryUI {
                 .inv-tab {
                     transition: all 0.2s ease;
                     cursor: pointer;
+                    flex-shrink: 0;
                 }
                 .inv-tab:hover {
                     color: #fff !important;
@@ -221,7 +222,9 @@ export class InventoryUI {
                     flex-direction: column;
                     gap: 4px;
                     padding-right: 2px;
+                    min-height: 0;
                 }
+
                 .inv-list-empty {
                     color: #6b635b;
                     font-size: 13px;
@@ -229,6 +232,22 @@ export class InventoryUI {
                     letter-spacing: 0.5px;
                     padding: 30px 0;
                     text-align: center;
+                }
+
+                /* ✅ 自定義滾動條 */
+                .inv-list-container::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .inv-list-container::-webkit-scrollbar-track {
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 4px;
+                }
+                .inv-list-container::-webkit-scrollbar-thumb {
+                    background: rgba(234, 179, 8, 0.2);
+                    border-radius: 4px;
+                }
+                .inv-list-container::-webkit-scrollbar-thumb:hover {
+                    background: rgba(234, 179, 8, 0.35);
                 }
 
                 @media (max-width: 480px) {
@@ -375,12 +394,10 @@ export class InventoryUI {
             ? this.items 
             : this.items.filter(i => i.category === this.currentTab);
 
-        // ✅ 如果選中的道具不在當前列表中，清空選中
         if (this.selectedItem && !filteredItems.some(i => i.id === this.selectedItem?.id)) {
             this.selectedItem = null;
         }
 
-        // ✅ 預設選中第一個
         if (filteredItems.length > 0 && !this.selectedItem) {
             this.selectedItem = filteredItems[0];
         }
@@ -461,7 +478,7 @@ export class InventoryUI {
                 -webkit-backdrop-filter: blur(12px);
                 border: none;
                 border-radius: 0;
-                padding: 16px 20px 18px 20px;
+                padding: 16px 24px 18px 24px;
                 width: 100vw;
                 max-width: 100vw;
                 height: 100dvh;
@@ -563,7 +580,7 @@ export class InventoryUI {
                     }).join('')}
                 </div>
 
-                <!-- 物品列表（一列一行，點擊展開詳情） -->
+                <!-- ✅ 物品列表（滿版 + 可滾動） -->
                 <div class="inv-list-container no-scrollbar">
                     ${listHtml}
                 </div>
@@ -600,17 +617,14 @@ export class InventoryUI {
             });
         });
 
-        // ✅ 點擊道具行：切換選中狀態
         document.querySelectorAll('.inv-list-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                // 如果點擊的是按鈕，不觸發切換
                 if ((e.target as HTMLElement).closest('button')) return;
 
                 const target = e.currentTarget as HTMLElement;
                 const itemId = target.getAttribute('data-id');
                 const found = this.items.find(i => i.id === itemId);
                 if (found) {
-                    // 如果點擊的是已經選中的，取消選中
                     if (this.selectedItem?.id === found.id) {
                         this.selectedItem = null;
                     } else {
@@ -621,7 +635,6 @@ export class InventoryUI {
             });
         });
 
-        // ✅ 使用按鈕事件（事件委託）
         document.querySelectorAll('[data-action="use"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
