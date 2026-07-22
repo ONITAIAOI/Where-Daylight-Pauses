@@ -110,8 +110,8 @@ export class AlchemistWorkshopUI {
             style.id = 'workshop-styles';
             style.innerHTML = `
                 @keyframes workshopPopIn {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes craftSuccess {
                     0% { transform: scale(1); }
@@ -123,6 +123,14 @@ export class AlchemistWorkshopUI {
                     25% { transform: translateX(-5px); }
                     75% { transform: translateX(5px); }
                     100% { transform: translateX(0); }
+                }
+                @keyframes toastFadeInTop {
+                    from { opacity: 0; transform: translate(-50%, -20px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+                @keyframes toastFadeOutTop {
+                    from { opacity: 1; transform: translate(-50%, 0); }
+                    to { opacity: 0; transform: translate(-50%, -15px); }
                 }
                 .workshop-recipe-card:hover {
                     background: rgba(234, 179, 8, 0.06) !important;
@@ -152,35 +160,27 @@ export class AlchemistWorkshopUI {
                     scrollbar-width: none !important;
                     -ms-overflow-style: none !important;
                 }
-
-                @media (max-width: 480px) {
-                    .workshop-main-card {
-                        max-width: 100% !important;
-                        height: 100dvh !important;
-                        max-height: 100dvh !important;
-                        border-radius: 0 !important;
-                        border: none !important;
-                    }
-                }
             `;
             document.head.appendChild(style);
         }
     }
 
+    // ✅ Toast 移到頂部
     private showToast(message: string, isSuccess: boolean = true) {
         const toast = document.createElement('div');
         toast.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
             background: rgba(28, 23, 20, 0.95);
             border: 2px solid ${isSuccess ? 'rgba(52, 211, 153, 0.6)' : 'rgba(239, 68, 68, 0.6)'};
-            color: #f3f0ea; padding: 20px 32px; border-radius: 16px;
-            font-size: 16px; font-weight: 600; text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            color: #f3f0ea; padding: 14px 24px; border-radius: 14px;
+            font-size: 14px; font-weight: 600; text-align: center;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
             z-index: 9999; backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            animation: workshopPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            max-width: 90vw; box-sizing: border-box;
+            animation: toastFadeInTop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 80vw; box-sizing: border-box;
             line-height: 1.6;
+            white-space: pre-line;
         `;
         toast.innerHTML = message;
         document.body.appendChild(toast);
@@ -221,23 +221,26 @@ export class AlchemistWorkshopUI {
             -webkit-backdrop-filter: blur(12px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 16px; box-sizing: border-box; overflow: hidden;
+            padding: 0; box-sizing: border-box; overflow: hidden;
         `;
 
         this.overlayContainer.innerHTML = `
             <div class="workshop-main-card" style="
                 background: #1c1714;
-                border: 1px solid rgba(234, 179, 8, 0.25);
-                border-radius: 24px; width: 100%; max-width: 560px;
-                max-height: 92vh; height: 100%;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+                border: none;
+                border-radius: 0;
+                width: 100vw;
+                max-width: 100vw;
+                height: 100dvh;
+                max-height: 100dvh;
                 color: #f3f0ea;
                 animation: workshopPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 box-sizing: border-box;
-                display: flex; flex-direction: column;
+                display: flex;
+                flex-direction: column;
                 overflow: hidden;
             ">
-                <!-- 🌟 Banner 區塊（與 MainHUD 風格一致） -->
+                <!-- 🌟 Banner 區塊 -->
                 <div style="
                     position: relative;
                     height: clamp(130px, 22vh, 170px);
@@ -248,7 +251,6 @@ export class AlchemistWorkshopUI {
                     box-sizing: border-box;
                     flex-shrink: 0;
                 ">
-                    <!-- 頂部：返回按鈕 + 心情狀態 -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1;">
                         <button id="workshop-btn-close" style="
                             background: rgba(18, 16, 14, 0.75); backdrop-filter: blur(8px);
@@ -267,7 +269,6 @@ export class AlchemistWorkshopUI {
                         </div>
                     </div>
 
-                    <!-- 底部：標題 -->
                     <div style="z-index: 1;">
                         <div style="font-size: 9px; font-weight: 600; color: #eab308; letter-spacing: 1.2px; margin-bottom: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
                             ALCHEMICAL WORKSHOP

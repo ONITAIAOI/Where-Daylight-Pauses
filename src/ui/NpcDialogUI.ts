@@ -67,17 +67,7 @@ export class NpcDialogUI {
                     -ms-overflow-style: none !important;
                 }
 
-                @media (max-width: 480px) {
-                    .npc-dialog-card {
-                        max-width: 100% !important;
-                        height: 100dvh !important;
-                        max-height: 100dvh !important;
-                        border-radius: 0 !important;
-                        border: none !important;
-                        padding: 24px 18px 18px 18px !important;
-                        display: flex !important;
-                        flex-direction: column !important;
-                    }
+                
                     .npc-dialog-body-scroll {
                         flex: 1 !important;
                         overflow-y: auto !important;

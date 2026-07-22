@@ -68,6 +68,10 @@ export class CharacterUI {
                         font-size: 38px !important;
                         margin-bottom: 12px !important;
                     }
+                    .char-color-dot {
+                        width: 28px !important;
+                        height: 28px !important;
+                    }
                 }
             `;
             document.head.appendChild(style);
@@ -96,14 +100,19 @@ export class CharacterUI {
             "></div>
 
             <div class="char-modal-container no-scrollbar" style="
-                background: rgba(22, 27, 34, 0.9);
-                border: 1px solid rgba(255, 183, 3, 0.25);
-                border-radius: 28px; padding: 36px 32px; width: 100%; max-width: 440px;
+                background: rgba(22, 27, 34, 0.92);
+                border: 1px solid rgba(255, 183, 3, 0.2);
+                border-radius: 28px;
+                padding: 36px 32px;
+                width: 100%;
+                max-width: 440px;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-                color: #f0f6fc; text-align: center;
+                color: #f0f6fc;
+                text-align: center;
                 animation: characterPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 box-sizing: border-box;
-                max-height: 90dvh; overflow-y: auto;
+                max-height: 90dvh;
+                overflow-y: auto;
             ">
                 <!-- 預覽大頭像 -->
                 <div id="char-avatar-preview" class="char-avatar" style="
@@ -248,7 +257,7 @@ export class CharacterUI {
                         avatarColor: this.selectedColor,
                         mood: '平安沉靜',
                         item: '暖心熱茶',
-                        sunCoins: intializeCoins(),
+                        sunCoins: 100,
                         memorialTokens: 10,
                         resilience: 10,
                         perception: 10,
@@ -308,9 +317,4 @@ export class CharacterUI {
             this.overlayContainer = null;
         }
     }
-}
-
-// 輔助小函式：避免 sunCoins 報錯
-function intializeCoins() {
-    return 100;
 }

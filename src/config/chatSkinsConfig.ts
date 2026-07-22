@@ -374,7 +374,7 @@ export const CHAT_SKINS: Record<string, ChatSkinConfig> = {
         extraClass: 'star-skin',
         sendEffect: 'starlight',
         flavorText: '💫 星辰墜落之處，願望都會實現',
-        available: true
+        available: false
     },
 
     'thunder_strike': {
@@ -390,7 +390,7 @@ export const CHAT_SKINS: Record<string, ChatSkinConfig> = {
         extraClass: 'lightning-skin',
         sendEffect: 'flame',
         flavorText: '⚡ 閃電劃過的瞬間，言語有了力量',
-        available: true
+        available: false
     },
 
     'phoenix_rise': {
@@ -406,7 +406,7 @@ export const CHAT_SKINS: Record<string, ChatSkinConfig> = {
         extraClass: 'phoenix-skin',
         sendEffect: 'flame',
         flavorText: '🔥 烈焰之中，鳳凰浴火重生',
-        available: true
+        available: false
     },
 
     // ============================================================

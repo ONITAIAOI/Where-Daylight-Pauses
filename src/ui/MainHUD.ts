@@ -4,6 +4,7 @@ import { ChatUI } from './ChatUI';
 import { RestHouseUI } from './RestHouseUI';
 import { TownMapUI } from './TownMapUI';
 import { AlchemistWorkshopUI } from './AlchemistWorkshopUI';
+import { ForestExplorerUI } from './ForestExplorerUI';
 import { getPlayerProfile } from '../firebase/playerData';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -39,6 +40,7 @@ export class MainHUD {
     private restHouseUI: RestHouseUI | null = null;
     private townMapUI: TownMapUI | null = null;
     private alchemistWorkshopUI: AlchemistWorkshopUI | null = null;
+    private forestUI: ForestExplorerUI | null = null;
     private glowParticles: HTMLDivElement[] = [];
     private currentSaying: string = '';
 
@@ -162,8 +164,8 @@ export class MainHUD {
             style.id = 'main-hud-styles';
             style.innerHTML = `
                 @keyframes hudFadeIn {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes toastFadeInTop {
                     from { opacity: 0; transform: translate(-50%, -20px); }
@@ -339,12 +341,18 @@ export class MainHUD {
                 background: rgba(28, 23, 20, 0.92);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
-                border: 1px solid rgba(234, 179, 8, 0.15);
-                border-radius: 24px; width: 100%; max-width: 440px;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04);
-                color: #f3f0ea; display: flex; flex-direction: column;
+                border: none;
+                border-radius: 0;
+                width: 100vw;
+                max-width: 100vw;
+                box-shadow: none;
+                color: #f3f0ea;
+                display: flex;
+                flex-direction: column;
                 animation: hudFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-                box-sizing: border-box; height: 100dvh; max-height: 820px;
+                box-sizing: border-box;
+                height: 100dvh;
+                max-height: 100dvh;
                 overflow: hidden;
                 position: relative;
             ">
@@ -354,7 +362,7 @@ export class MainHUD {
                                 url('./assets/images/main.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
                     padding: 14px 18px; box-sizing: border-box; flex-shrink: 0;
-                    border-radius: 24px 24px 0 0;
+                    border-radius: 0;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1;">
                         <div style="
@@ -593,62 +601,7 @@ export class MainHUD {
                 this.showToast(`✨ 休息已完成！記得去「心境小屋」領取暖陽喔！`);
             }
 
-            if (this.townMapUI) {
-                this.townMapUI.remove();
-                this.townMapUI = null;
-            }
-
-            const userId = this.authUid || (this.profile as any)?.uid || 'default_user';
-
-            this.townMapUI = new TownMapUI(
-                (locationId: string) => {
-                    console.log(`📍 選擇地點: ${locationId}`);
-
-                    if (this.townMapUI) {
-                        this.townMapUI.remove();
-                        this.townMapUI = null;
-                    }
-
-                    switch (locationId) {
-                        case 'alchemist': {
-                            if (this.alchemistWorkshopUI) {
-                                this.alchemistWorkshopUI.remove();
-                                this.alchemistWorkshopUI = null;
-                            }
-                            this.alchemistWorkshopUI = new AlchemistWorkshopUI(
-                                userId,
-                                (recipeId, refreshUI) => {
-                                    console.log(`⚗️ 合成配方: ${recipeId}`);
-                                    if (refreshUI) refreshUI();
-                                },
-                                () => {
-                                    if (this.alchemistWorkshopUI) {
-                                        this.alchemistWorkshopUI.remove();
-                                        this.alchemistWorkshopUI = null;
-                                    }
-                                    this.openTownMap();
-                                }
-                            );
-                            break;
-                        }
-                        case 'blacksmith':
-                            console.log('🔨 鐵匠鋪（後續擴充）');
-                            break;
-                        case 'guild':
-                            console.log('⚔️ 冒險者公會（後續擴充）');
-                            break;
-                        default:
-                            console.warn(`未知地點: ${locationId}`);
-                            break;
-                    }
-                },
-                () => {
-                    if (this.townMapUI) {
-                        this.townMapUI.remove();
-                        this.townMapUI = null;
-                    }
-                }
-            );
+            this.openTownMap();
 
             if (this.options.onOpenTownMap) {
                 this.options.onOpenTownMap();
@@ -691,7 +644,6 @@ export class MainHUD {
 
         // 🍵 心境小屋按鈕
         document.getElementById('btn-settings')?.addEventListener('click', () => {
-            // ✅ 關閉已打開的 ChatUI（因為它使用舊的 Profile）
             if (this.chatUI) {
                 this.chatUI.remove();
                 this.chatUI = null;
@@ -702,15 +654,12 @@ export class MainHUD {
             }
             const userId = this.authUid || (this.profile as any)?.uid || 'default_user';
             this.restHouseUI = new RestHouseUI(userId, async () => {
-                // ✅ 心境小屋關閉時，重新載入最新的 Profile
                 const updatedProfile = await getPlayerProfile(this.authUid);
                 if (updatedProfile) {
                     this.profile = updatedProfile;
-                    // ✅ 如果有 ChatUI，更新它的 Profile
                     if (this.chatUI) {
                         this.chatUI.updateProfile(updatedProfile);
                     }
-                    // ✅ 更新 MainHUD 顯示
                     this.render();
                 }
                 this.restHouseUI = null;
@@ -726,8 +675,8 @@ export class MainHUD {
         if (!this.profile) return;
 
         if (this.townMapUI) {
-            console.log('🗺️ 地圖已存在，直接顯示');
-            return;
+            this.townMapUI.remove();
+            this.townMapUI = null;
         }
 
         const userId = this.authUid || (this.profile as any)?.uid || 'default_user';
@@ -763,6 +712,18 @@ export class MainHUD {
                         );
                         break;
                     }
+                    case 'forest': {
+                        console.log('🌲 進入呢喃迷霧森林');
+                        if (this.forestUI) {
+                            this.forestUI.remove();
+                            this.forestUI = null;
+                        }
+                        this.forestUI = new ForestExplorerUI(userId, () => {
+                            this.forestUI = null;
+                            this.openTownMap();
+                        });
+                        break;
+                    }
                     case 'blacksmith':
                         console.log('🔨 鐵匠鋪（後續擴充）');
                         break;
@@ -783,11 +744,9 @@ export class MainHUD {
         );
     }
 
-    // ✅ 新增：更新 Profile（供外部調用）
     public updateProfile(newProfile: PlayerProfile) {
         this.profile = newProfile;
         this.render();
-        // 如果有 ChatUI，也更新它的 Profile
         if (this.chatUI) {
             this.chatUI.updateProfile(newProfile);
         }
@@ -812,6 +771,10 @@ export class MainHUD {
         if (this.alchemistWorkshopUI) {
             this.alchemistWorkshopUI.remove();
             this.alchemistWorkshopUI = null;
+        }
+        if (this.forestUI) {
+            this.forestUI.remove();
+            this.forestUI = null;
         }
         this.restHouseUI = null;
 

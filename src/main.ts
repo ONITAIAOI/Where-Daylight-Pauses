@@ -82,7 +82,7 @@ function launchMainHUD(currentUid: string, profile: any) {
     }
 
     profile.uid = currentUid;
-
+   (window as any).__currentProfile = profile;
     // ✅ 移除 onOpenTownMap 和 onOpenSettings 內部的 UI 創建邏輯
     // 讓 MainHUD 完全內部管理所有子 UI
     mainHUD = new MainHUD(profile, currentUid, {

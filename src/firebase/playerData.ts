@@ -44,6 +44,7 @@ export interface ItemDefinition {
         perception?: number;
         energy?: number;
     };
+    usage?: string;
 }
 
 export const ITEM_DATABASE: Record<string, ItemDefinition> = {

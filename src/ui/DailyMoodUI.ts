@@ -16,11 +16,32 @@ export class DailyMoodUI {
         { name: '悠閒隨性', desc: '沒有目的地，隨處停留。', icon: '🍃' }
     ];
 
+    // ✅ 加入 usage 欄位，讓玩家知道道具用途
     private readonly itemOptions = [
-        { id: 'item_51', name: '暖心熱茶', desc: '驅散寒意，帶來溫暖療癒感。' },
-        { id: 'item_52', name: '舊相機', desc: '捕捉沿途光影與美好瞬間。' },
-        { id: 'item_53', name: '旅行日記', desc: '記錄靈感與心情點滴。' },
-        { id: 'item_54', name: '懷錶', desc: '提醒自己放慢腳步享受當下。' }
+        { 
+            id: 'item_51', 
+            name: '暖心熱茶', 
+            desc: '驅散寒意，帶來溫暖療癒感。',
+            usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 3 點心靈韌性'
+        },
+        { 
+            id: 'item_52', 
+            name: '舊相機', 
+            desc: '捕捉沿途光影與美好瞬間。',
+            usage: '👁️ 提升 5 點感知力（裝備後生效）'
+        },
+        { 
+            id: 'item_53', 
+            name: '旅行日記', 
+            desc: '記錄靈感與心情點滴。',
+            usage: '👁️ 提升 3 點感知力 · 🛡️ 提升 2 點心靈韌性'
+        },
+        { 
+            id: 'item_54', 
+            name: '懷錶', 
+            desc: '提醒自己放慢腳步享受當下。',
+            usage: '🗝️ 持有即可進入「迷霧森林」探索（每週三、六、日開放）· 每次進入消耗 1 枚'
+        }
     ];
 
     constructor(uid: string, profile: PlayerProfile, onComplete: (mood: string, item: string) => void) {
@@ -47,8 +68,8 @@ export class DailyMoodUI {
         style.id = 'daily-mood-styles';
         style.innerHTML = `
             @keyframes modalPopIn {
-                from { opacity: 0; transform: translateY(15px) scale(0.96); }
-                to { opacity: 1; transform: translateY(0) scale(1); }
+                from { opacity: 0; transform: translateY(15px); }
+                to { opacity: 1; transform: translateY(0); }
             }
             @keyframes toastSlideIn {
                 from { transform: translateX(120%); opacity: 0; }
@@ -64,8 +85,14 @@ export class DailyMoodUI {
             }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+            .item-usage {
+                font-size: 9px;
+                color: #8b949e;
+                margin-top: 2px;
+                letter-spacing: 0.2px;
+                opacity: 0.8;
+            }
 
-            /* 針對手機螢幕動態調整邊距與空間，徹底消除壓迫感 */
             @media (max-width: 480px) {
                 .mood-modal-container {
                     padding: 24px 18px !important;
@@ -97,17 +124,25 @@ export class DailyMoodUI {
             -webkit-backdrop-filter: blur(16px); display: flex;
             justify-content: center; align-items: center; z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 12px; box-sizing: border-box;
+            padding: 16px; box-sizing: border-box;
         `;
 
         this.overlayContainer.innerHTML = `
             <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
             <div class="no-scrollbar mood-modal-container" style="
-                background: rgba(22, 27, 34, 0.92); border: 1px solid rgba(255, 183, 3, 0.3);
-                border-radius: 24px; padding: 28px 24px; width: 100%; max-width: 480px;
+                background: rgba(22, 27, 34, 0.92);
+                border: 1px solid rgba(255, 183, 3, 0.25);
+                border-radius: 24px;
+                padding: 28px 24px;
+                width: 100%;
+                max-width: 480px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-                color: #f0f6fc; text-align: center; animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                box-sizing: border-box; max-height: 90dvh; overflow-y: auto;
+                color: #f0f6fc;
+                text-align: center;
+                animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                box-sizing: border-box;
+                max-height: 90dvh;
+                overflow-y: auto;
             ">
                 <div style="
                     width: 48px; height: 48px; margin: 0 auto 10px auto; border-radius: 50%;
@@ -151,10 +186,18 @@ export class DailyMoodUI {
                                         padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;
                                         background: ${isSel ? 'rgba(255, 183, 3, 0.15)' : 'rgba(255,255,255,0.03)'};
                                         border: 1px solid ${isSel ? '#ffb703' : 'rgba(255,255,255,0.08)'};
-                                        display: flex; justify-content: space-between; align-items: center;
                                     ">
-                                        <span style="font-size: 12px; font-weight: ${isSel ? '700' : '500'}; color: ${isSel ? '#ffb703' : '#c9d1d9'};">${item.name}</span>
-                                        <span style="font-size: 10px; color: #8b949e;">${item.desc}</span>
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="font-size: 12px; font-weight: ${isSel ? '700' : '500'}; color: ${isSel ? '#ffb703' : '#c9d1d9'};">${item.name}</span>
+                                            <span style="font-size: 10px; color: #8b949e;">${item.desc}</span>
+                                        </div>
+                                        ${item.usage ? `
+                                            <div class="item-usage" style="
+                                                font-size: 9px; color: #8b949e; margin-top: 2px; 
+                                                padding-top: 2px; border-top: 1px solid rgba(255,255,255,0.04);
+                                                opacity: ${isSel ? '1' : '0.6'};
+                                            ">${item.usage}</div>
+                                        ` : ''}
                                     </div>
                                 `;
                             }).join('')}
@@ -192,6 +235,11 @@ export class DailyMoodUI {
                 if (titleEl) {
                     titleEl.style.fontWeight = isSel ? '700' : (selector === '.mood-card' ? '600' : '500');
                     titleEl.style.color = isSel ? '#ffb703' : (selector === '.mood-card' ? '#fff' : '#c9d1d9');
+                }
+
+                const usageEl = el.querySelector('.item-usage') as HTMLElement;
+                if (usageEl) {
+                    usageEl.style.opacity = isSel ? '1' : '0.6';
                 }
             });
         };
@@ -237,7 +285,9 @@ export class DailyMoodUI {
 
                     await savePlayerProfile(this.uid, this.profile);
 
-                    this.showToast(`✨ 今日心境已記錄，並獲得了 ${this.selectedItem}！`);
+                    const usageText = selectedObj?.usage ? `\n${selectedObj.usage}` : '';
+                    this.showToast(`✨ 今日心境已記錄，並獲得了「${this.selectedItem}」！${usageText}`);
+                    
                     setTimeout(() => {
                         this.remove();
                         this.onComplete(this.selectedMood, this.selectedItem);
@@ -265,6 +315,7 @@ export class DailyMoodUI {
             font-weight: 500; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
             animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             display: flex; align-items: center; gap: 8px;
+            white-space: pre-line;
         `;
         toast.innerHTML = `<span>${message}</span>`;
         toastContainer.appendChild(toast);
@@ -272,7 +323,7 @@ export class DailyMoodUI {
         setTimeout(() => {
             toast.style.animation = 'toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
             setTimeout(() => toast.remove(), 300);
-        }, 2200);
+        }, 2800);
     }
 
     private remove() {

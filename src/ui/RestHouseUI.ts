@@ -325,15 +325,7 @@ export class RestHouseUI {
                     -ms-overflow-style: none !important;
                 }
 
-                @media (max-width: 480px) {
-                    .rest-main-card {
-                        max-width: 100% !important;
-                        height: 100dvh !important;
-                        max-height: 100dvh !important;
-                        border-radius: 0 !important;
-                        border: none !important;
-                    }
-                }
+               
             `;
             document.head.appendChild(style);
         }
@@ -419,12 +411,11 @@ export class RestHouseUI {
         this.container.innerHTML = `
             <div class="rest-main-card" style="
                 position: relative; z-index: 1;
-                background: rgba(28, 23, 20, 0.92);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(234, 179, 8, 0.15);
-                border-radius: 24px; width: 100%; max-width: 500px;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+               background: #1c1714;
+    border: none;
+    border-radius: 0; width: 100vw; max-width: 100vw;
+    box-shadow: none;
+     rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04);
                 overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;
                 max-height: 92vh; height: 100%;
             ">

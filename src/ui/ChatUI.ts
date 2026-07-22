@@ -62,8 +62,8 @@ export class ChatUI {
             style.id = 'chat-ui-styles';
             style.innerHTML = `
                 @keyframes chatFadeIn {
-                    from { opacity: 0; transform: scale(0.96) translateY(12px); }
-                    to { opacity: 1; transform: scale(1) translateY(0); }
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes glowFloat {
                     0% { opacity: 0.1; transform: translateY(0) scale(1); }
@@ -374,23 +374,8 @@ export class ChatUI {
                     transform: rotate(90deg);
                 }
 
-                @media (max-width: 480px) {
-                    .chat-modal-container {
-                        max-width: 100% !important;
-                        height: 94dvh !important;
-                        max-height: none !important;
-                        border-radius: 20px 20px 0 0 !important;
-                        position: absolute !important;
-                        bottom: 0 !important;
-                        margin: 0 !important;
-                    }
-                    .chat-overlay-wrapper {
-                        align-items: flex-end !important;
-                        padding: 0 !important;
-                    }
-                    .safety-tip {
-                        font-size: 9px !important;
-                    }
+                .safety-tip {
+                    font-size: 10px !important;
                 }
             `;
             document.head.appendChild(style);
@@ -435,18 +420,22 @@ export class ChatUI {
             -webkit-backdrop-filter: blur(10px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 16px; box-sizing: border-box;
+            padding: 0;
+            box-sizing: border-box;
         `;
 
         this.container.innerHTML = `
             <div class="chat-modal-container" style="
                 background: rgba(28, 23, 20, 0.95);
                 backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(234, 179, 8, 0.2);
-                border-radius: 24px; width: 100%; max-width: 440px; height: 85vh;
-                max-height: 620px; display: flex; flex-direction: column;
-                box-shadow: 0 25px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+                border: none;
+                border-radius: 0;
+                width: 100vw;
+                max-width: 100vw;
+                height: 100dvh;
+                max-height: 100dvh;
+                display: flex;
+                flex-direction: column;
                 animation: chatFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 box-sizing: border-box;
                 overflow: hidden;
@@ -652,7 +641,6 @@ export class ChatUI {
             const bubble = document.createElement('div');
             bubble.className = 'chat-message-bubble';
 
-            // ✅ 基礎樣式
             let baseStyle = '';
             if (isMe) {
                 baseStyle = `
@@ -670,7 +658,6 @@ export class ChatUI {
                 `;
             }
 
-            // ✅ 套用皮膚樣式（直接覆蓋）
             if (skin) {
                 let skinStyle = '';
                 if (skin.bubbleStyle) {
@@ -685,7 +672,6 @@ export class ChatUI {
                     bubble.style.cssText = baseStyle;
                 }
 
-                // ✅ 如果有額外 CSS 類名，加入
                 if (skin.extraClass) {
                     bubble.classList.add(skin.extraClass);
                 }
@@ -693,7 +679,6 @@ export class ChatUI {
                 bubble.style.cssText = baseStyle;
             }
 
-            // ✅ 確保圓角方向正確
             if (isMe) {
                 bubble.style.borderBottomRightRadius = '4px';
             } else {
@@ -708,14 +693,12 @@ export class ChatUI {
         area.scrollTop = area.scrollHeight;
     }
 
-    // ✅ 修改：發送訊息時重新讀取最新的 Profile
     private async sendMessage(text: string) {
         if (this.isSending) return;
 
         try {
             this.isSending = true;
 
-            // ✅ 重新讀取最新的 Profile（確保皮膚是最新的）
             const latestProfile = await getPlayerProfile(this.authUid);
             if (latestProfile) {
                 this.profile = latestProfile;
@@ -746,7 +729,6 @@ export class ChatUI {
         }
     }
 
-    // ✅ 新增：更新 Profile（供 MainHUD 調用）
     public updateProfile(newProfile: PlayerProfile) {
         this.profile = newProfile;
     }

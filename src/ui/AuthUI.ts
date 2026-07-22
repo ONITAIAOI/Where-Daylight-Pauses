@@ -22,16 +22,6 @@ export class AuthUI {
                 }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-
-                @media (max-width: 480px) {
-                    .auth-modal-container {
-                        padding: 24px 20px !important;
-                        width: 90% !important;
-                        max-width: 340px !important;
-                        max-height: 94dvh !important;
-                        overflow-y: auto !important;
-                    }
-                }
             `;
             document.head.appendChild(style);
         }
@@ -54,7 +44,8 @@ export class AuthUI {
                 border: 1px solid rgba(255,255,255,0.15); 
                 border-radius: 20px; 
                 padding: 32px; 
-                width: 340px; 
+                width: 100%; 
+                max-width: 380px; 
                 box-shadow: 0 16px 50px rgba(0,0,0,0.6); 
                 text-align: center;
                 animation: authPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);

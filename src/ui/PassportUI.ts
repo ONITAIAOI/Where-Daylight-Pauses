@@ -54,19 +54,7 @@ export class PassportUI {
                     -ms-overflow-style: none !important;
                 }
 
-                @media (max-width: 480px) {
-                    .passport-card {
-                        max-width: 100% !important;
-                        height: 100dvh !important;
-                        max-height: 100dvh !important;
-                        border-radius: 0 !important;
-                        border: none !important;
-                        padding: 32px 20px 20px 20px !important;
-                        display: flex !important;
-                        flex-direction: column !important;
-                        justify-content: center !important;
-                    }
-                }
+                
             `;
             document.head.appendChild(style);
         }
