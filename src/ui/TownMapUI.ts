@@ -112,8 +112,8 @@ export class TownMapUI {
             style.id = 'town-map-styles';
             style.innerHTML = `
                 @keyframes mapPopIn {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes modalFadeIn {
                     from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -161,7 +161,18 @@ export class TownMapUI {
                     -ms-overflow-style: none !important;
                 }
 
-                
+                @media (max-width: 480px) {
+                    .town-map-main-card {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
+                    .town-map-content-scroll {
+                        padding: 0 2px !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -179,7 +190,8 @@ export class TownMapUI {
             -webkit-backdrop-filter: blur(12px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 16px; box-sizing: border-box; overflow: hidden;
+            padding: 0;
+            box-sizing: border-box; overflow: hidden;
         `;
 
         const categoryTitles: { [key: string]: { label: string, icon: string } } = {
@@ -191,16 +203,22 @@ export class TownMapUI {
         const categories = ['town', 'adventure', 'workshop'];
 
         this.overlayContainer.innerHTML = `
-        <div class="town-map-main-card" style="
+            <div class="town-map-main-card" style="
                 background: #1c1714;
                 border: none;
-                border-radius: 0; padding: 24px 22px; 
-                width: 100vw; max-width: 100vw;
-                height: 100dvh; max-height: 100dvh;                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+                border-radius: 0;
+                padding: 24px 22px;
+                width: 100vw;
+                max-width: 100vw;
+                height: 100dvh;
+                max-height: 100dvh;
+                box-shadow: none;
                 color: #f3f0ea;
                 animation: mapPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 box-sizing: border-box;
-                display: flex; flex-direction: column; gap: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
                 overflow: hidden;
             ">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
@@ -229,7 +247,7 @@ export class TownMapUI {
                     隨心所欲散步吧！部分秘境依據日程或天候開放，看看今天哪裡可以去。
                 </p>
 
-                <div id="town-map-content-scroll" style="
+                <div id="town-map-content-scroll" class="town-map-content-scroll" style="
                     display: flex; flex-direction: column; gap: 14px; 
                     overflow-y: auto; flex: 1; padding-right: 2px;
                     -webkit-overflow-scrolling: touch;
@@ -381,7 +399,6 @@ export class TownMapUI {
         });
     }
 
-    // ✅ 修正：Toast 移到頂部
     private showToast(message: string) {
         const toast = document.createElement('div');
         toast.style.cssText = `

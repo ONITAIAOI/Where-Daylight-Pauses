@@ -24,8 +24,8 @@ export class RestHouseUI {
             style.id = 'rest-house-styles';
             style.innerHTML = `
                 @keyframes restFadeIn {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes modalFadeIn {
                     from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -50,233 +50,6 @@ export class RestHouseUI {
                     0% { background-position: -200% center; }
                     100% { background-position: 200% center; }
                 }
-
-                // ✨ 複製 ChatUI 的皮膚動畫（讓預覽也能顯示）
-                @keyframes skinGlowPulse {
-                    0%, 100% { filter: brightness(1); transform: scale(1); }
-                    50% { filter: brightness(1.2); transform: scale(1.02); }
-                }
-                @keyframes borderFlow {
-                    0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
-                    50% { border-color: rgba(254, 240, 138, 1); box-shadow: 0 0 35px rgba(234, 179, 8, 0.9); }
-                    100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
-                }
-                @keyframes auroraFlow {
-                    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-                    50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
-                    100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-                }
-                @keyframes cosmicSpin {
-                    0% { background-position: 0% 50%; }
-                    100% { background-position: 200% 50%; }
-                }
-                @keyframes cherryFall {
-                    0%, 100% { filter: brightness(1); }
-                    50% { filter: brightness(1.1); box-shadow: 0 0 30px rgba(255, 182, 193, 0.5); }
-                }
-                @keyframes enchantedGlow {
-                    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
-                    50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.7), 0 0 60px rgba(236, 72, 153, 0.3); }
-                }
-                @keyframes magmaFlow {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                @keyframes cyberGlitch {
-                    0%, 100% { filter: hue-rotate(0deg) brightness(1); }
-                    50% { filter: hue-rotate(30deg) brightness(1.2); box-shadow: 0 0 25px rgba(45, 212, 191, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.6); }
-                }
-                @keyframes crystalShimmer {
-                    0%, 100% { opacity: 0.7; transform: scale(1); }
-                    50% { opacity: 1; transform: scale(1.03); text-shadow: 0 0 20px rgba(255,255,255,0.5); }
-                }
-                @keyframes rainbowFlow {
-                    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-                    100% { background-position: 200% 50%; filter: hue-rotate(360deg); }
-                }
-                @keyframes lightningStrike {
-                    0%, 89%, 91%, 93%, 95%, 97%, 100% { opacity: 0; transform: scale(0.8); }
-                    90% { opacity: 1; transform: scale(1.2); }
-                    92% { opacity: 0.6; transform: scale(1.1); }
-                    94% { opacity: 1; transform: scale(1.3); }
-                    96% { opacity: 0; transform: scale(0.9); }
-                    98% { opacity: 0.8; transform: scale(1.1); }
-                }
-                @keyframes lightningPulse {
-                    0%, 100% { transform: scale(1); opacity: 0.2; }
-                    50% { transform: scale(1.8); opacity: 0.6; }
-                }
-                @keyframes flameDance {
-                    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
-                    25% { transform: scale(1.1) rotate(-3deg); opacity: 0.9; }
-                    50% { transform: scale(0.95) rotate(3deg); opacity: 0.7; }
-                    75% { transform: scale(1.05) rotate(-2deg); opacity: 0.8; }
-                }
-                @keyframes stormSpin {
-                    0% { transform: rotate(0deg) scale(1); }
-                    50% { transform: rotate(180deg) scale(1.1); }
-                    100% { transform: rotate(360deg) scale(1); }
-                }
-                @keyframes meteorShower {
-                    0% { transform: translateX(-20px) translateY(-20px) scale(0.5); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateX(40px) translateY(40px) scale(1.5); opacity: 0; }
-                }
-                @keyframes candleFlicker {
-                    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
-                    20% { transform: scale(1.05) rotate(2deg); opacity: 0.9; }
-                    40% { transform: scale(0.95) rotate(-2deg); opacity: 0.6; }
-                    60% { transform: scale(1.08) rotate(1deg); opacity: 0.8; }
-                    80% { transform: scale(0.92) rotate(-1deg); opacity: 0.7; }
-                }
-
-                // ============================================================
-                // ✨ 皮膚專屬動畫（extraClass）- 複製自 ChatUI
-                // ============================================================
-
-                .candle-skin::before {
-                    content: '🕯️';
-                    position: absolute;
-                    top: 10%;
-                    right: 8%;
-                    font-size: 24px;
-                    animation: candleFlicker 1.5s ease-in-out infinite;
-                    pointer-events: none;
-                    filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));
-                    z-index: 2;
-                }
-                .candle-skin::after {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    right: -50%;
-                    width: 100%;
-                    height: 100%;
-                    background: radial-gradient(circle at 70% 20%, rgba(251, 191, 36, 0.08) 0%, transparent 60%);
-                    animation: candleFlicker 2s ease-in-out infinite;
-                    pointer-events: none;
-                    border-radius: inherit;
-                    z-index: 1;
-                }
-
-                .rainbow-skin::before {
-                    content: '✨';
-                    position: absolute;
-                    top: 10%;
-                    left: 10%;
-                    font-size: 20px;
-                    animation: meteorShower 3s ease-in-out infinite;
-                    pointer-events: none;
-                    z-index: 2;
-                }
-                .rainbow-skin::after {
-                    content: '';
-                    position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent 30%, rgba(255,255,255,0.05));
-                    pointer-events: none;
-                    border-radius: inherit;
-                    z-index: 1;
-                }
-
-                .storm-skin::before {
-                    content: '🌀';
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    font-size: 48px;
-                    opacity: 0.08;
-                    animation: stormSpin 8s linear infinite;
-                    pointer-events: none;
-                    z-index: 1;
-                }
-                .storm-skin::after {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    left: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle at 50% 50%, rgba(148, 163, 184, 0.05) 0%, transparent 60%);
-                    animation: stormSpin 12s linear infinite reverse;
-                    pointer-events: none;
-                    border-radius: inherit;
-                    z-index: 1;
-                }
-
-                .star-skin::before {
-                    content: '⭐';
-                    position: absolute;
-                    top: 15%;
-                    right: 12%;
-                    font-size: 18px;
-                    animation: meteorShower 2.5s ease-in-out infinite;
-                    pointer-events: none;
-                    filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.6));
-                    z-index: 2;
-                }
-                .star-skin::after {
-                    content: '';
-                    position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.05) 0%, transparent 50%);
-                    animation: skinGlowPulse 3s ease-in-out infinite;
-                    pointer-events: none;
-                    border-radius: inherit;
-                    z-index: 1;
-                }
-
-                .lightning-skin::before {
-                    content: '⚡';
-                    position: absolute;
-                    top: 20%;
-                    right: 10%;
-                    font-size: 30px;
-                    opacity: 0;
-                    animation: lightningStrike 4s ease-in-out infinite;
-                    pointer-events: none;
-                    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
-                    z-index: 2;
-                }
-                .lightning-skin::after {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    left: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle at 60% 30%, rgba(251, 191, 36, 0.06) 0%, transparent 50%);
-                    animation: lightningPulse 3s ease-in-out infinite;
-                    pointer-events: none;
-                    border-radius: inherit;
-                    z-index: 1;
-                }
-
-                .phoenix-skin::before {
-                    content: '🔥';
-                    position: absolute;
-                    top: 10%;
-                    right: 8%;
-                    font-size: 22px;
-                    animation: flameDance 1.5s ease-in-out infinite;
-                    pointer-events: none;
-                    filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.5));
-                    z-index: 2;
-                }
-                .phoenix-skin::after {
-                    content: '✦';
-                    position: absolute;
-                    bottom: 15%;
-                    left: 10%;
-                    font-size: 16px;
-                    opacity: 0.3;
-                    animation: meteorShower 3s ease-in-out infinite;
-                    pointer-events: none;
-                    z-index: 2;
-                }
-
                 .rest-glow-particle {
                     position: absolute;
                     border-radius: 50%;
@@ -325,7 +98,18 @@ export class RestHouseUI {
                     -ms-overflow-style: none !important;
                 }
 
-               
+                @media (max-width: 480px) {
+                    .rest-main-card {
+                        max-width: 100% !important;
+                        height: 100dvh !important;
+                        max-height: 100dvh !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
+                    .rest-house-body-content {
+                        padding: 12px 14px 14px 14px !important;
+                    }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -403,7 +187,9 @@ export class RestHouseUI {
             background: linear-gradient(160deg, #1f1a17 0%, #12100e 100%);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #f3f0ea; padding: 16px; box-sizing: border-box;
+            color: #f3f0ea;
+            padding: 0;
+            box-sizing: border-box;
             animation: restFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             overflow: hidden;
         `;
@@ -411,13 +197,18 @@ export class RestHouseUI {
         this.container.innerHTML = `
             <div class="rest-main-card" style="
                 position: relative; z-index: 1;
-               background: #1c1714;
-    border: none;
-    border-radius: 0; width: 100vw; max-width: 100vw;
-    box-shadow: none;
-     rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04);
-                overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;
-                max-height: 92vh; height: 100%;
+                background: #1c1714;
+                border: none;
+                border-radius: 0;
+                width: 100vw;
+                max-width: 100vw;
+                box-shadow: none;
+                overflow: hidden;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                height: 100dvh;
+                max-height: 100dvh;
             ">
                 <div style="
                     position: relative; height: clamp(130px, 22vh, 170px); flex-shrink: 0;
@@ -425,7 +216,6 @@ export class RestHouseUI {
                                 url('./assets/images/RestHouseUI.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
                     padding: 14px 18px; box-sizing: border-box;
-                    border-radius: 24px 24px 0 0;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1;">
                         <button id="rest-back-btn" style="
@@ -478,7 +268,7 @@ export class RestHouseUI {
                     ">💬 對話衣櫥</button>
                 </div>
 
-                <div id="rest-house-body-content" style="
+                <div id="rest-house-body-content" class="rest-house-body-content" style="
                     padding: 16px 18px 18px 18px; 
                     overflow-y: auto; 
                     display: flex; flex-direction: column; gap: 12px; 
@@ -667,7 +457,6 @@ export class RestHouseUI {
         `;
     }
 
-    // ✅ 修正：預覽區完整支援 extraClass 動畫
     private renderWardrobeTabContent(profile: PlayerProfile): string {
         const profileAny = profile as any;
         const unlocked = profileAny.unlockedChatSkins ?? ['default'];
@@ -721,24 +510,20 @@ export class RestHouseUI {
 
             const cardClass = isEquipped ? 'skin-card equipped' : 'skin-card';
 
-            // ✅ 構建預覽樣式（完整支援 extraClass）
             let previewStyle = skin.bubbleStyle || '';
             if (skin.textStyle) {
                 previewStyle += skin.textStyle;
             }
-            // 確保預覽框有 position: relative 和 overflow: hidden 來支援偽元素
             if (!previewStyle.includes('position:')) {
                 previewStyle += ' position: relative;';
             }
             if (!previewStyle.includes('overflow:')) {
                 previewStyle += ' overflow: hidden;';
             }
-            // 確保有最小高度讓偽元素有空間顯示
             if (!previewStyle.includes('min-height:')) {
                 previewStyle += ' min-height: 36px;';
             }
 
-            // 構建 extraClass 的 class 屬性
             const extraClassAttr = skin.extraClass ? `class="${skin.extraClass}"` : '';
 
             skinsHTML += `
@@ -762,7 +547,6 @@ export class RestHouseUI {
                         </div>
                         <div>${actionBtnHTML}</div>
                     </div>
-                    <!-- ✅ 預覽區：完整支援 extraClass + 偽元素動畫 -->
                     <div style="
                         background: rgba(0,0,0,0.2); 
                         padding: 8px 10px; 

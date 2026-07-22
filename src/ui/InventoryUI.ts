@@ -60,33 +60,148 @@ export class InventoryUI {
                     50% { opacity: 0.4; transform: translateY(-15px) scale(1.15); }
                     100% { opacity: 0.1; transform: translateY(0) scale(1); }
                 }
+                @keyframes detailExpand {
+                    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
                 .inv-glow-particle {
                     position: absolute;
                     border-radius: 50%;
-                    background: radial-gradient(circle, rgba(234, 179, 8, 0.2) 0%, rgba(234, 179, 8, 0) 70%);
+                    background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0) 70%);
                     pointer-events: none;
                     animation: glowFloat 5s ease-in-out infinite;
                 }
-                .inv-slot {
+                .inv-list-item {
+                    display: flex;
+                    flex-direction: column;
+                    border-radius: 10px;
+                    background: rgba(255, 255, 255, 0.02);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    overflow: hidden;
+                }
+                .inv-list-item:hover {
+                    border-color: rgba(234, 179, 8, 0.25);
+                    background: rgba(234, 179, 8, 0.04);
+                }
+                .inv-list-item.selected {
+                    border-color: #eab308;
+                    background: rgba(234, 179, 8, 0.06);
+                }
+                .inv-list-item .item-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 8px 12px;
+                }
+                .inv-list-item .item-icon {
+                    font-size: 20px;
+                    flex-shrink: 0;
+                    width: 32px;
+                    text-align: center;
+                }
+                .inv-list-item .item-info {
+                    flex: 1;
+                    min-width: 0;
+                }
+                .inv-list-item .item-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #fff;
+                }
+                .inv-list-item .item-desc {
+                    font-size: 11px;
+                    color: #a89f91;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .inv-list-item .item-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex-shrink: 0;
+                }
+                .inv-list-item .item-count {
+                    font-size: 11px;
+                    color: #eab308;
+                    background: rgba(234, 179, 8, 0.1);
+                    padding: 1px 8px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(234, 179, 8, 0.1);
+                }
+                .inv-list-item .item-rarity {
+                    font-size: 9px;
+                    padding: 1px 6px;
+                    border-radius: 4px;
+                }
+                .inv-list-item .item-rarity.common { color: #a89f91; }
+                .inv-list-item .item-rarity.rare { color: #60a5fa; background: rgba(96, 165, 250, 0.08); }
+                .inv-list-item .item-rarity.epic { color: #d8b4fe; background: rgba(216, 180, 254, 0.08); }
+
+                /* ✅ 展開的詳情區 */
+                .inv-item-detail {
+                    padding: 0 12px 12px 12px;
+                    animation: detailExpand 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    border-top: 1px solid rgba(234, 179, 8, 0.06);
+                    padding-top: 10px;
+                    margin-top: 2px;
+                }
+                .inv-item-detail .detail-desc {
+                    font-size: 12px;
+                    color: #d4c9b8;
+                    line-height: 1.5;
+                }
+                .inv-item-detail .detail-usage {
+                    font-size: 10px;
+                    color: #eab308;
+                    background: rgba(234, 179, 8, 0.05);
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    border: 1px solid rgba(234, 179, 8, 0.06);
+                    margin-top: 6px;
+                }
+                .inv-item-detail .detail-action {
+                    margin-top: 8px;
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                .inv-item-detail .detail-action button {
+                    padding: 4px 16px;
+                    border-radius: 8px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: none;
+                }
+                .inv-item-detail .detail-action button.can-use {
+                    background: rgba(234, 179, 8, 0.15);
+                    border: 1px solid rgba(234, 179, 8, 0.3);
+                    color: #fde047;
+                }
+                .inv-item-detail .detail-action button.can-use:hover {
+                    background: rgba(234, 179, 8, 0.25);
+                    transform: translateY(-1px);
+                }
+                .inv-item-detail .detail-action button.can-use:active {
+                    transform: translateY(0) scale(0.97);
+                }
+                .inv-item-detail .detail-action button.cannot-use {
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    color: #6b635b;
+                    cursor: default;
+                }
+
+                .inv-tab {
                     transition: all 0.2s ease;
                     cursor: pointer;
                 }
-                .inv-slot:hover {
-                    border-color: rgba(234, 179, 8, 0.5) !important;
-                    background: rgba(234, 179, 8, 0.08) !important;
-                    transform: translateY(-2px);
-                }
-                .inv-slot.selected {
-                    border-color: #eab308 !important;
-                    background: rgba(234, 179, 8, 0.15) !important;
-                    box-shadow: 0 0 20px rgba(234, 179, 8, 0.15);
-                }
-                .inv-tab {
-                    transition: all 0.2s ease;
-                }
                 .inv-tab:hover {
                     color: #fff !important;
-                    background: rgba(234, 179, 8, 0.08) !important;
+                    background: rgba(234, 179, 8, 0.06) !important;
                 }
                 .inv-close-btn {
                     transition: all 0.2s ease;
@@ -96,48 +211,57 @@ export class InventoryUI {
                     background: rgba(234, 179, 8, 0.1) !important;
                     color: #fde047 !important;
                 }
-                .inv-action-btn {
-                    transition: all 0.2s ease;
-                }
-                .inv-action-btn:hover {
-                    background: rgba(234, 179, 8, 0.2) !important;
-                    border-color: rgba(234, 179, 8, 0.5) !important;
-                    transform: translateY(-1px);
-                }
-                .inv-action-btn:active {
-                    transform: translateY(0) scale(0.97);
-                }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-                .rarity-common { color: #a89f91; }
-                .rarity-rare { color: #60a5fa; }
-                .rarity-epic { color: #d8b4fe; }
 
-                .inv-item-grid {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 8px;
-                    max-height: 160px;
+                .inv-list-container {
+                    flex: 1;
                     overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
                     padding-right: 2px;
-                    flex-shrink: 0;
+                }
+                .inv-list-empty {
+                    color: #6b635b;
+                    font-size: 13px;
+                    font-weight: 300;
+                    letter-spacing: 0.5px;
+                    padding: 30px 0;
+                    text-align: center;
                 }
 
                 @media (max-width: 480px) {
                     .inv-modal-container {
-                        padding: 16px 14px !important;
+                        padding: 12px 12px 16px 12px !important;
                     }
-                    .inv-item-grid {
-                        max-height: 140px !important;
-                        gap: 6px !important;
+                    .inv-list-item .item-row {
+                        padding: 6px 10px !important;
+                        gap: 8px !important;
+                    }
+                    .inv-list-item .item-icon {
+                        font-size: 16px !important;
+                        width: 26px !important;
+                    }
+                    .inv-list-item .item-name {
+                        font-size: 12px !important;
+                    }
+                    .inv-list-item .item-desc {
+                        font-size: 10px !important;
+                    }
+                    .inv-list-item .item-count {
+                        font-size: 10px !important;
+                        padding: 0 6px !important;
                     }
                     .inv-tab {
                         font-size: 9px !important;
-                        padding: 4px !important;
+                        padding: 4px 0 !important;
                     }
-                    .inv-detail-area {
-                        min-height: 70px !important;
-                        padding: 10px 12px !important;
+                    .inv-item-detail {
+                        padding: 0 10px 10px 10px !important;
+                    }
+                    .inv-item-detail .detail-desc {
+                        font-size: 11px !important;
                     }
                 }
             `;
@@ -152,10 +276,10 @@ export class InventoryUI {
         this.glowParticles.forEach(p => p.remove());
         this.glowParticles = [];
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 8; i++) {
             const particle = document.createElement('div');
             particle.className = 'inv-glow-particle';
-            const size = 3 + Math.random() * 6;
+            const size = 3 + Math.random() * 5;
             const x = 5 + Math.random() * 90;
             const y = 5 + Math.random() * 90;
             const delay = Math.random() * 5;
@@ -166,7 +290,7 @@ export class InventoryUI {
                 left: ${x}%; top: ${y}%;
                 animation-delay: ${delay}s;
                 animation-duration: ${duration}s;
-                opacity: ${0.08 + Math.random() * 0.2};
+                opacity: ${0.06 + Math.random() * 0.15};
             `;
             container.appendChild(particle);
             this.glowParticles.push(particle);
@@ -245,10 +369,77 @@ export class InventoryUI {
     }
 
     private render() {
-        const gridEl = document.getElementById('inv-item-grid');
-        const currentScrollTop = gridEl ? gridEl.scrollTop : 0;
-
         this.removeOverlay();
+
+        const filteredItems = this.currentTab === 'all' 
+            ? this.items 
+            : this.items.filter(i => i.category === this.currentTab);
+
+        // ✅ 如果選中的道具不在當前列表中，清空選中
+        if (this.selectedItem && !filteredItems.some(i => i.id === this.selectedItem?.id)) {
+            this.selectedItem = null;
+        }
+
+        // ✅ 預設選中第一個
+        if (filteredItems.length > 0 && !this.selectedItem) {
+            this.selectedItem = filteredItems[0];
+        }
+
+        const getRarityClass = (rarity?: string) => {
+            if (rarity === 'epic') return 'epic';
+            if (rarity === 'rare') return 'rare';
+            return 'common';
+        };
+        const getRarityLabel = (rarity?: string) => {
+            if (rarity === 'epic') return '✨史詩';
+            if (rarity === 'rare') return '⭐稀有';
+            return '';
+        };
+
+        let listHtml = '';
+        if (filteredItems.length > 0) {
+            listHtml = filteredItems.map(item => {
+                const isSelected = this.selectedItem?.id === item.id;
+                const isConsumable = item.category === 'consumable';
+                
+                return `
+                    <div class="inv-list-item ${isSelected ? 'selected' : ''}" 
+                         data-id="${item.id}">
+                        <div class="item-row">
+                            <span class="item-icon">${item.icon}</span>
+                            <div class="item-info">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-desc">${item.desc}</div>
+                            </div>
+                            <div class="item-meta">
+                                ${item.rarity && item.rarity !== 'common' ? 
+                                    `<span class="item-rarity ${getRarityClass(item.rarity)}">${getRarityLabel(item.rarity)}</span>` : ''}
+                                ${item.count > 1 ? `<span class="item-count">×${item.count}</span>` : ''}
+                            </div>
+                        </div>
+                        ${isSelected ? `
+                            <div class="inv-item-detail">
+                                <div class="detail-desc">${item.desc}</div>
+                                ${item.usage ? `
+                                    <div class="detail-usage">
+                                        ${item.category === 'equipment' ? '⚙️ 裝備後' : '✨ 使用後'}：${item.usage}
+                                    </div>
+                                ` : ''}
+                                <div class="detail-action">
+                                    <button class="${isConsumable ? 'can-use' : 'cannot-use'}" 
+                                            data-action="use"
+                                            ${!isConsumable ? 'disabled' : ''}>
+                                        ${isConsumable ? '☀️ 使用' : '📜 收藏品'}
+                                    </button>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        } else {
+            listHtml = `<div class="inv-list-empty">✦ 此分類目前空無一物 ✦</div>`;
+        }
 
         this.overlayContainer = document.createElement('div');
         this.overlayContainer.className = 'inv-overlay-wrapper';
@@ -263,27 +454,6 @@ export class InventoryUI {
             box-sizing: border-box;
         `;
 
-        const filteredItems = this.currentTab === 'all' 
-            ? this.items 
-            : this.items.filter(i => i.category === this.currentTab);
-
-        if (filteredItems.length > 0 && (!this.selectedItem || !filteredItems.some(i => i.id === this.selectedItem?.id))) {
-            this.selectedItem = filteredItems[0];
-        } else if (filteredItems.length === 0) {
-            this.selectedItem = null;
-        }
-
-        const getRarityColor = (rarity?: string) => {
-            if (rarity === 'epic') return '#d8b4fe';
-            if (rarity === 'rare') return '#60a5fa';
-            return '#a89f91';
-        };
-        const getRarityLabel = (rarity?: string) => {
-            if (rarity === 'epic') return '✨ 史詩';
-            if (rarity === 'rare') return '⭐ 稀有';
-            return '• 一般';
-        };
-
         this.overlayContainer.innerHTML = `
             <div class="no-scrollbar inv-modal-container" style="
                 background: rgba(28, 23, 20, 0.95);
@@ -291,7 +461,7 @@ export class InventoryUI {
                 -webkit-backdrop-filter: blur(12px);
                 border: none;
                 border-radius: 0;
-                padding: 20px 24px;
+                padding: 16px 20px 18px 20px;
                 width: 100vw;
                 max-width: 100vw;
                 height: 100dvh;
@@ -301,18 +471,18 @@ export class InventoryUI {
                 box-sizing: border-box;
                 display: flex;
                 flex-direction: column;
-                gap: 14px;
+                gap: 10px;
                 position: relative;
                 overflow: hidden;
             ">
-                <!-- 🌟 Banner 區塊 -->
+                <!-- Banner 區塊 -->
                 <div style="
                     position: relative;
-                    height: clamp(100px, 16vh, 140px);
+                    height: clamp(85px, 13vh, 115px);
                     background: linear-gradient(180deg, rgba(28, 23, 20, 0.05) 30%, rgba(28, 23, 20, 0.92) 70%, rgba(28, 23, 20, 1) 100%), 
                                 url('./assets/images/InventoryUI.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 12px 18px;
+                    padding: 10px 16px;
                     box-sizing: border-box;
                     flex-shrink: 0;
                 ">
@@ -322,7 +492,7 @@ export class InventoryUI {
                             -webkit-backdrop-filter: blur(6px);
                             border: 1px solid rgba(234, 179, 8, 0.2);
                             color: #fde047;
-                            padding: 5px 14px;
+                            padding: 4px 12px;
                             border-radius: 20px;
                             cursor: pointer;
                             font-size: 11px;
@@ -336,204 +506,66 @@ export class InventoryUI {
                         <div style="
                             background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
                             -webkit-backdrop-filter: blur(6px);
-                            padding: 3px 12px;
-                            border-radius: 16px;
-                            border: 1px solid rgba(234, 179, 8, 0.15);
+                            padding: 2px 10px;
+                            border-radius: 14px;
+                            border: 1px solid rgba(234, 179, 8, 0.12);
                             font-size: 10px;
                             font-weight: 600;
                             color: #eab308;
                             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
                         ">
-                            🎒 行囊
+                            🎒 ${this.items.length} 件
                         </div>
                     </div>
 
                     <div style="z-index: 1;">
-                        <div style="font-size: 9px; font-weight: 500; color: #eab308; letter-spacing: 1.2px; margin-bottom: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
+                        <div style="font-size: 8px; font-weight: 500; color: #eab308; letter-spacing: 1.2px; margin-bottom: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
                             PERSONAL INVENTORY
                         </div>
                         <div style="font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6);">
-                            旅人收藏 · ${this.items.length} 件
+                            旅人收藏
                         </div>
                     </div>
                 </div>
 
-                <!-- 📂 分類頁籤 -->
+                <!-- 分類頁籤 -->
                 <div style="
                     display: flex;
-                    gap: 4px;
+                    gap: 3px;
                     background: rgba(0,0,0,0.2);
                     padding: 3px;
                     border-radius: 10px;
                     border: 1px solid rgba(255,255,255,0.04);
                     flex-shrink: 0;
                 ">
-                    <button class="inv-tab" data-tab="all" style="
-                        flex: 1;
-                        padding: 6px 0;
-                        background: ${this.currentTab === 'all' ? 'rgba(234,179,8,0.12)' : 'transparent'};
-                        border: ${this.currentTab === 'all' ? '1px solid rgba(234,179,8,0.2)' : '1px solid transparent'};
-                        border-radius: 8px;
-                        color: ${this.currentTab === 'all' ? '#fde047' : '#a89f91'};
-                        font-size: 10px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">📋 全部</button>
-                    <button class="inv-tab" data-tab="consumable" style="
-                        flex: 1;
-                        padding: 6px 0;
-                        background: ${this.currentTab === 'consumable' ? 'rgba(234,179,8,0.12)' : 'transparent'};
-                        border: ${this.currentTab === 'consumable' ? '1px solid rgba(234,179,8,0.2)' : '1px solid transparent'};
-                        border-radius: 8px;
-                        color: ${this.currentTab === 'consumable' ? '#fde047' : '#a89f91'};
-                        font-size: 10px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">☕ 消耗品</button>
-                    <button class="inv-tab" data-tab="equipment" style="
-                        flex: 1;
-                        padding: 6px 0;
-                        background: ${this.currentTab === 'equipment' ? 'rgba(234,179,8,0.12)' : 'transparent'};
-                        border: ${this.currentTab === 'equipment' ? '1px solid rgba(234,179,8,0.2)' : '1px solid transparent'};
-                        border-radius: 8px;
-                        color: ${this.currentTab === 'equipment' ? '#fde047' : '#a89f91'};
-                        font-size: 10px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">⚙️ 裝備</button>
-                    <button class="inv-tab" data-tab="material" style="
-                        flex: 1;
-                        padding: 6px 0;
-                        background: ${this.currentTab === 'material' ? 'rgba(234,179,8,0.12)' : 'transparent'};
-                        border: ${this.currentTab === 'material' ? '1px solid rgba(234,179,8,0.2)' : '1px solid transparent'};
-                        border-radius: 8px;
-                        color: ${this.currentTab === 'material' ? '#fde047' : '#a89f91'};
-                        font-size: 10px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">🌾 材料</button>
-                </div>
-
-                <!-- 📦 物品網格 -->
-                <div id="inv-item-grid" class="inv-item-grid no-scrollbar">
-                    ${filteredItems.length > 0 ? filteredItems.map(item => `
-                        <div class="inv-slot ${this.selectedItem?.id === item.id ? 'selected' : ''}" 
-                             data-id="${item.id}" 
-                             style="
-                                position: relative;
-                                background: rgba(255, 255, 255, 0.02);
-                                border: 1px solid ${this.selectedItem?.id === item.id ? 'rgba(234,179,8,0.4)' : 'rgba(255, 255, 255, 0.05)'};
-                                border-radius: 10px;
-                                aspect-ratio: 1;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                                transition: all 0.2s ease;
-                             ">
-                            <span style="font-size: 22px;">${item.icon}</span>
-                            ${item.count > 1 ? `
-                                <span style="
-                                    position: absolute;
-                                    bottom: 3px;
-                                    right: 5px;
-                                    font-size: 9px;
-                                    font-weight: 700;
-                                    color: #eab308;
-                                    background: rgba(28, 23, 20, 0.9);
-                                    padding: 1px 5px;
-                                    border-radius: 4px;
-                                    border: 1px solid rgba(234,179,8,0.15);
-                                ">${item.count}</span>
-                            ` : ''}
-                        </div>
-                    `).join('') : `
-                        <div style="
-                            grid-column: span 4;
-                            text-align: center;
-                            padding: 24px 0;
-                            color: #6b635b;
-                            font-size: 12px;
-                            font-weight: 300;
-                            letter-spacing: 0.5px;
-                        ">
-                            ✦ 此分類目前空無一物 ✦
-                        </div>
-                    `}
-                </div>
-
-                <!-- 📝 物品詳情區 -->
-                <div class="inv-detail-area" style="
-                    background: rgba(0, 0, 0, 0.25);
-                    border: 1px solid rgba(234, 179, 8, 0.08);
-                    border-radius: 12px;
-                    padding: 12px 14px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 6px;
-                    flex-shrink: 0;
-                    min-height: 80px;
-                    transition: all 0.3s ease;
-                ">
-                    ${this.selectedItem ? `
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 28px;">${this.selectedItem.icon}</span>
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                                        ${this.selectedItem.name}
-                                        <span style="font-size: 9px; color: ${getRarityColor(this.selectedItem.rarity)}; font-weight: 400;">
-                                            ${getRarityLabel(this.selectedItem.rarity)}
-                                        </span>
-                                    </div>
-                                    <div style="font-size: 10px; color: #a89f91; line-height: 1.3;">
-                                        持有數量：<span style="color: #fde047; font-weight: 600;">${this.selectedItem.count}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="font-size: 11px; color: #d4c9b8; line-height: 1.5; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.04);">
-                            ${this.selectedItem.desc}
-                        </div>
-                        ${this.selectedItem.usage ? `
-                            <div style="
+                    ${(['all', 'consumable', 'equipment', 'material'] as TabType[]).map(tab => {
+                        const labels: Record<TabType, string> = {
+                            all: '📋 全部',
+                            consumable: '☕ 消耗品',
+                            equipment: '⚙️ 裝備',
+                            material: '🌾 材料'
+                        };
+                        const isActive = this.currentTab === tab;
+                        return `
+                            <button class="inv-tab" data-tab="${tab}" style="
+                                flex: 1;
+                                padding: 5px 0;
+                                background: ${isActive ? 'rgba(234,179,8,0.1)' : 'transparent'};
+                                border: ${isActive ? '1px solid rgba(234,179,8,0.15)' : '1px solid transparent'};
+                                border-radius: 7px;
+                                color: ${isActive ? '#fde047' : '#a89f91'};
                                 font-size: 10px;
-                                color: #eab308;
-                                line-height: 1.5;
-                                background: rgba(234,179,8,0.06);
-                                padding: 4px 10px;
-                                border-radius: 6px;
-                                border: 1px solid rgba(234,179,8,0.08);
-                            ">
-                                ${this.selectedItem.category === 'equipment' ? '⚙️ 裝備後效果' : '✨ 使用後效果'}：${this.selectedItem.usage}
-                            </div>
-                        ` : ''}
-                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px;">
-                            <button id="inv-use-btn" class="inv-action-btn" style="
-                                background: ${this.selectedItem.category === 'consumable' ? 'rgba(234, 179, 8, 0.12)' : 'rgba(255,255,255,0.03)'};
-                                border: 1px solid ${this.selectedItem.category === 'consumable' ? 'rgba(234, 179, 8, 0.25)' : 'rgba(255,255,255,0.06)'};
-                                color: ${this.selectedItem.category === 'consumable' ? '#fde047' : '#a89f91'};
-                                padding: 5px 16px;
-                                border-radius: 8px;
-                                font-size: 11px;
                                 font-weight: 600;
-                                cursor: ${this.selectedItem.category === 'consumable' ? 'pointer' : 'default'};
-                                transition: all 0.2s;
-                                opacity: ${this.selectedItem.category === 'consumable' ? '1' : '0.6'};
-                            ">${this.selectedItem.category === 'consumable' ? '☀️ 使用' : '📜 收藏'}</button>
-                        </div>
-                    ` : `
-                        <div style="
-                            text-align: center;
-                            color: #6b635b;
-                            font-size: 11px;
-                            padding: 12px 0;
-                            font-weight: 300;
-                            letter-spacing: 0.5px;
-                        ">
-                            ✦ 輕觸上方物品查看詳情 ✦
-                        </div>
-                    `}
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+                            ">${labels[tab]}</button>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- 物品列表（一列一行，點擊展開詳情） -->
+                <div class="inv-list-container no-scrollbar">
+                    ${listHtml}
                 </div>
             </div>
         `;
@@ -541,10 +573,6 @@ export class InventoryUI {
         document.body.appendChild(this.overlayContainer);
 
         this.createGlowParticles();
-
-        const newGridEl = document.getElementById('inv-item-grid');
-        if (newGridEl) newGridEl.scrollTop = currentScrollTop;
-
         this.bindEvents();
     }
 
@@ -561,8 +589,6 @@ export class InventoryUI {
             tab.addEventListener('click', (e) => {
                 const target = e.currentTarget as HTMLElement;
                 const newTab = (target.getAttribute('data-tab') || 'all') as TabType;
-                
-                // ✅ 只有當 tab 真的變更時才重新渲染
                 if (this.currentTab !== newTab) {
                     this.currentTab = newTab;
                     const filtered = this.currentTab === 'all' 
@@ -574,22 +600,35 @@ export class InventoryUI {
             });
         });
 
-        document.querySelectorAll('.inv-slot').forEach(slot => {
-            slot.addEventListener('click', (e) => {
+        // ✅ 點擊道具行：切換選中狀態
+        document.querySelectorAll('.inv-list-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // 如果點擊的是按鈕，不觸發切換
+                if ((e.target as HTMLElement).closest('button')) return;
+
                 const target = e.currentTarget as HTMLElement;
                 const itemId = target.getAttribute('data-id');
                 const found = this.items.find(i => i.id === itemId);
-                if (found && this.selectedItem?.id !== found.id) {
-                    this.selectedItem = found;
+                if (found) {
+                    // 如果點擊的是已經選中的，取消選中
+                    if (this.selectedItem?.id === found.id) {
+                        this.selectedItem = null;
+                    } else {
+                        this.selectedItem = found;
+                    }
                     this.render();
                 }
             });
         });
 
-        const useBtn = document.getElementById('inv-use-btn');
-        if (useBtn && this.selectedItem) {
-            useBtn.onclick = () => this.handleUseItem();
-        }
+        // ✅ 使用按鈕事件（事件委託）
+        document.querySelectorAll('[data-action="use"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!this.selectedItem) return;
+                this.handleUseItem();
+            });
+        });
     }
 
     private async handleUseItem() {
