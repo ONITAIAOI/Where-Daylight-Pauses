@@ -57,6 +57,7 @@ export class AlchemistWorkshopUI {
             if (profile) {
                 const rawInventory = (profile as any).inventory || {};
                 
+                // ✅ 轉換陣列為物件
                 if (Array.isArray(rawInventory)) {
                     this.playerInventory = {};
                     for (const item of rawInventory) {
@@ -71,7 +72,7 @@ export class AlchemistWorkshopUI {
                 
                 this.currentMood = (profile as any).mood || '平安沉靜';
                 
-                console.log('📦 已載入背包 (物件格式):', this.playerInventory);
+                console.log('📦 背包已載入:', this.playerInventory);
             }
         } catch (error) {
             console.error('讀取玩家資料失敗:', error);
@@ -439,7 +440,7 @@ export class AlchemistWorkshopUI {
                 return;
             }
 
-            // ✅ 同時支援陣列和物件格式
+            // ✅ 讀取最新背包（支援陣列格式）
             let inventory = (profile as any).inventory || {};
             if (Array.isArray(inventory)) {
                 const invObj: Record<string, number> = {};
@@ -452,6 +453,7 @@ export class AlchemistWorkshopUI {
                 inventory = invObj;
             }
             
+            // ✅ 檢查材料是否足夠
             const allEnough = recipe.materials.every(mat => (inventory[mat.itemId] || 0) >= mat.count);
             if (!allEnough) {
                 this.showToast('❌ 材料不足，無法合成', false);
@@ -469,6 +471,7 @@ export class AlchemistWorkshopUI {
             const roll = Math.random() * 100;
             const isSuccess = roll <= successRate;
 
+            // ✅ 扣除材料
             const updatedInventory = { ...inventory };
             for (const mat of recipe.materials) {
                 updatedInventory[mat.itemId] = (updatedInventory[mat.itemId] || 0) - mat.count;
@@ -481,7 +484,7 @@ export class AlchemistWorkshopUI {
                 updatedInventory[recipeId] = (updatedInventory[recipeId] || 0) + 1;
             }
 
-            // ✅ 轉回陣列格式儲存（明確指定 count 為 number）
+            // ✅ 轉回陣列格式儲存
             const inventoryArray = Object.entries(updatedInventory).map(([id, count]) => ({
                 id: id,
                 count: count as number
@@ -494,7 +497,7 @@ export class AlchemistWorkshopUI {
 
             await savePlayerProfile(this.userId, updatedProfile);
 
-            // ✅ 更新本地為物件格式方便比對
+            // ✅ 更新本地快取
             this.playerInventory = updatedInventory;
 
             if (isSuccess) {
