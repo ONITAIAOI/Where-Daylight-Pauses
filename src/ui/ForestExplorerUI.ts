@@ -426,10 +426,10 @@ export class ForestExplorerUI {
                 const amount = parseInt(coinMatch[1]);
                 rewards['☀️ 暖陽幣'] = (rewards['☀️ 暖陽幣'] || 0) + amount;
             }
-            const tokenMatch = record.match(/🌟 獲得 (\d+) 紀念章/);
+            const tokenMatch = record.match(/🌟 獲得 (\d+) 紀念代幣/);
             if (tokenMatch) {
                 const amount = parseInt(tokenMatch[1]);
-                rewards['🌟 紀念章'] = (rewards['🌟 紀念章'] || 0) + amount;
+                rewards['🌟 紀念代幣'] = (rewards['🌟 紀念代幣'] || 0) + amount;
             }
             for (const itemId in ITEM_DATABASE) {
                 const item = ITEM_DATABASE[itemId];
@@ -494,7 +494,7 @@ export class ForestExplorerUI {
         if (event.isSuccess && event.rewards.length > 0) {
             const rewardTexts = event.rewards.map(r => {
                 if (r.sunCoins) return `☀️ 獲得 ${r.sunCoins} 暖陽幣`;
-                if (r.memorialTokens) return `🌟 獲得 ${r.memorialTokens} 紀念章`;
+                if (r.memorialTokens) return `🌟 獲得 ${r.memorialTokens} 紀念代幣`;
                 if (r.itemId) {
                     const item = ITEM_DATABASE[r.itemId];
                     return `獲得 ${item?.name || r.itemId} x${r.count || 1}`;
@@ -531,7 +531,7 @@ export class ForestExplorerUI {
                             ">
                                 ${event.rewards.map(r => {
                                     if (r.sunCoins) return `<div style="color: #fde047;">☀️ 獲得 ${r.sunCoins} 暖陽幣</div>`;
-                                    if (r.memorialTokens) return `<div style="color: #d8b4fe;">🌟 獲得 ${r.memorialTokens} 紀念章</div>`;
+                                    if (r.memorialTokens) return `<div style="color: #d8b4fe;">🌟 獲得 ${r.memorialTokens} 紀念代幣</div>`;
                                     if (r.itemId) {
                                         const item = ITEM_DATABASE[r.itemId];
                                         return `<div style="color: #34d399;">🎁 獲得 ${item?.name || r.itemId} x${r.count || 1}</div>`;
@@ -588,7 +588,7 @@ export class ForestExplorerUI {
                                 ">
                                     ${event.rewards.map(r => {
                                         if (r.sunCoins) return `<div style="color: #fde047; font-size: 12px;">☀️ 獲得 ${r.sunCoins} 暖陽幣</div>`;
-                                        if (r.memorialTokens) return `<div style="color: #d8b4fe; font-size: 12px;">🌟 獲得 ${r.memorialTokens} 紀念章</div>`;
+                                        if (r.memorialTokens) return `<div style="color: #d8b4fe; font-size: 12px;">🌟 獲得 ${r.memorialTokens} 紀念代幣</div>`;
                                         if (r.itemId) {
                                             const item = ITEM_DATABASE[r.itemId];
                                             return `<div style="color: #34d399; font-size: 12px;">🎁 獲得 ${item?.name || r.itemId} x${r.count || 1}</div>`;

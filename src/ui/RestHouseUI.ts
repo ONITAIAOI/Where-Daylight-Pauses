@@ -944,8 +944,8 @@ export class RestHouseUI {
             if (skin.currency === 'memorialTokens' && memorialTokens < skin.price) {
                 this.showConfirmModal({
                     icon: '🌟',
-                    title: '紀念章不足',
-                    desc: `解鎖此造型需要 ${skin.price} 紀念章\n你目前只有 ${memorialTokens} 紀念章`,
+                    title: '紀念代幣不足',
+                    desc: `解鎖此造型需要 ${skin.price} 紀念代幣\n你目前只有 ${memorialTokens} 紀念代幣`,
                     confirmText: '知道了',
                     onConfirm: () => {}
                 });

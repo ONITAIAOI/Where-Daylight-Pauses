@@ -13,7 +13,7 @@ export interface PlayerProfile {
     item?: string;
     lastMoodDate?: string; // 今日簽到日期
     sunCoins: number;       // ☀️ 暖陽幣
-    memorialTokens: number; // 🌟 紀念章 (儲值代幣)
+    memorialTokens: number; // 🌟 紀念代幣 (儲值代幣)
     inventory?: InventoryItemData[]; // 🎒 玩家背包資料 (輕量儲存)
     equippedChatSkin?: string;         // 💬 當前裝備的對話框樣式
     unlockedChatSkins?: string[];    // 💬 已解鎖的對話框樣式清單
