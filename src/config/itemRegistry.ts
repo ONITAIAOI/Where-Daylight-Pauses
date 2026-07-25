@@ -19,7 +19,7 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_51', name: '暖心熱茶', category: 'consumable', icon: '🍵', 
         desc: '驅散寒意，帶來溫暖的療癒感。', rarity: 'common',
         effect: { resilience: 3, energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 3 點心靈韌性'
+        usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 3 點心靈韌性'
     },
     'item_52': { 
         id: 'item_52', name: '舊相機', category: 'equipment', icon: '📷', 
@@ -48,49 +48,49 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_1', name: '香濃熱咖啡', category: 'consumable', icon: '☕', 
         desc: '咖啡館特製的熱咖啡，飲用後可恢復些許精神，帶來溫暖。', rarity: 'common', 
         effect: { energy: 20 },
-        usage: '☀️ 恢復 20 點旅人能量'
+        usage: '☀️ 恢復 20 點光量'
     },
     'item_2': { 
         id: 'item_2', name: '洋甘菊舒壓茶', category: 'consumable', icon: '🍵', 
         desc: '帶有淡淡花香的草本茶，能撫平焦慮與疲憊的心靈。', rarity: 'common', 
         effect: { resilience: 5, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 5 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 5 點心靈韌性'
     },
     'item_3': { 
         id: 'item_3', name: '冰釀蜂蜜檸檬', category: 'consumable', icon: '🍋', 
         desc: '酸甜清涼的消暑良伴，在炎熱午後帶來一抹清爽。', rarity: 'common', 
         effect: { energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量'
+        usage: '☀️ 恢復 15 點光量'
     },
     'item_4': { 
         id: 'item_4', name: '黑糖薑母茶', category: 'consumable', icon: '🫚', 
         desc: '微辣帶甜的暖心熱飲，驅散雨天帶來的潮濕寒意。', rarity: 'common', 
         effect: { resilience: 4, energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 4 點心靈韌性'
+        usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 4 點心靈韌性'
     },
     'item_5': { 
         id: 'item_5', name: '職人手沖拿鐵', category: 'consumable', icon: '🥛', 
         desc: '綿密奶泡與濃郁咖啡交織的完美比例，充滿幸福感。', rarity: 'rare', 
         effect: { energy: 25, resilience: 2 },
-        usage: '☀️ 恢復 25 點旅人能量 · 🛡️ 提升 2 點心靈韌性'
+        usage: '☀️ 恢復 25 點光量 · 🛡️ 提升 2 點心靈韌性'
     },
     'item_6': { 
         id: 'item_6', name: '特調星空可可', category: 'consumable', icon: '🍫', 
         desc: '撒上食用金箔的濃郁熱可可，夜晚喝了能做個好夢。', rarity: 'rare', 
         effect: { resilience: 8, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 8 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 8 點心靈韌性'
     },
     'item_7': { 
         id: 'item_7', name: '薄荷冰沙', category: 'consumable', icon: '🌿', 
         desc: '瞬間提神醒腦的清涼冰品，夏天不可或缺的良藥。', rarity: 'common', 
         effect: { energy: 20 },
-        usage: '☀️ 恢復 20 點旅人能量'
+        usage: '☀️ 恢復 20 點光量'
     },
     'item_8': { 
         id: 'item_8', name: '桂圓紅棗茶', category: 'consumable', icon: '🥣', 
         desc: '傳統滋補的甜湯，滋潤喉嚨也溫暖心房。', rarity: 'common', 
         effect: { resilience: 6, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 6 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 6 點心靈韌性'
     },
 
     // === 甜點與輕食類 (消耗品) ===
@@ -98,43 +98,43 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_9', name: '法式經典可頌', category: 'consumable', icon: '🥐', 
         desc: '外皮酥脆、奶油香氣四溢的晨光早餐首選。', rarity: 'common', 
         effect: { energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量'
+        usage: '☀️ 恢復 15 點光量'
     },
     'item_10': { 
         id: 'item_10', name: '手工草莓大福', category: 'consumable', icon: '🍓', 
         desc: 'Q彈麻糬包覆著多汁草莓與綿密紅豆泥，酸甜適中。', rarity: 'common', 
         effect: { resilience: 3, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 3 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 3 點心靈韌性'
     },
     'item_11': { 
         id: 'item_11', name: '抹茶紅豆戚風', category: 'consumable', icon: '🍰', 
         desc: '茶香濃郁而不苦澀的日式風味蛋糕。', rarity: 'rare', 
         effect: { resilience: 5, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 5 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 5 點心靈韌性'
     },
     'item_12': { 
         id: 'item_12', name: '奶油肉桂捲', category: 'consumable', icon: '🥨', 
         desc: '出爐時香氣撲鼻，療癒力滿點的罪惡美味。', rarity: 'common', 
         effect: { resilience: 4, energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 4 點心靈韌性'
+        usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 4 點心靈韌性'
     },
     'item_13': { 
         id: 'item_13', name: '蜂蜜鬆餅', category: 'consumable', icon: '🥞', 
         desc: '淋滿琥珀色天然蜂蜜的金黃鬆餅。', rarity: 'common', 
         effect: { energy: 20 },
-        usage: '☀️ 恢復 20 點旅人能量'
+        usage: '☀️ 恢復 20 點光量'
     },
     'item_14': { 
         id: 'item_14', name: '手工黑巧餅乾', category: 'consumable', icon: '🍪', 
         desc: '酥脆扎實的巧克力餅乾，適合配茶享用。', rarity: 'common', 
         effect: { energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量'
+        usage: '☀️ 恢復 10 點光量'
     },
     'item_15': { 
         id: 'item_15', name: '暖心蘋果派', category: 'consumable', icon: '🥧', 
         desc: '帶有肉桂香氣的熱烤蘋果內餡，家的味道。', rarity: 'rare', 
         effect: { resilience: 6, energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 6 點心靈韌性'
+        usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 6 點心靈韌性'
     },
     'item_16': { 
         id: 'item_16', name: '彩虹馬卡龍', category: 'consumable', icon: '🍬', 
@@ -184,13 +184,13 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_23', name: '暖暖包', category: 'consumable', icon: '🔥', 
         desc: '寒冬或雨天時握在手中瞬間暖和的隨身法寶。', rarity: 'common', 
         effect: { energy: 10, resilience: 2 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 2 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 2 點心靈韌性'
     },
     'item_24': { 
         id: 'item_24', name: '薄荷精油滾珠', category: 'consumable', icon: '💧', 
         desc: '感到疲憊時塗抹在太陽穴，能瞬間清爽。', rarity: 'common', 
         effect: { energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量'
+        usage: '☀️ 恢復 15 點光量'
     },
 
     // === 自然與探索材料（無效果，不需要 usage） ===
@@ -199,7 +199,7 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_26', name: '神祕樹果', category: 'consumable', icon: '🍎', 
         desc: '帶有甜香味的野生果實，野外探索時常見的補給品。', rarity: 'common', 
         effect: { energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量'
+        usage: '☀️ 恢復 10 點光量'
     },
     'item_27': { id: 'item_27', name: '鎮民感謝信', category: 'material', icon: '💌', desc: '來自小鎮居民的謝函，乘載著滿滿的人情味。', rarity: 'common' },
     'item_28': { id: 'item_28', name: '乾燥薰衣草束', category: 'material', icon: '🌾', desc: '散發天然香氣的乾燥花束，可製作成香包。', rarity: 'common' },
@@ -219,13 +219,13 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_39', name: '萬聖南瓜糖', category: 'consumable', icon: '🍬', 
         desc: '帶有肉桂與南瓜風味的搞怪糖果。', rarity: 'common', 
         effect: { energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量'
+        usage: '☀️ 恢復 10 點光量'
     },
     'item_40': { 
         id: 'item_40', name: '平安夜薑餅人', category: 'consumable', icon: '🍪', 
         desc: '聖誕節限定的手工薑餅，造型十分可愛。', rarity: 'rare', 
         effect: { resilience: 5, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 5 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 5 點心靈韌性'
     },
 
     // === 收藏與紀念品類 ===
@@ -245,7 +245,7 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_55', name: '晨光舒眠香包', category: 'consumable', icon: '🌿', 
         desc: '用晨曦露珠與乾燥薰衣草手作的安眠香包，散發安心草本芬芳。', rarity: 'rare',
         effect: { resilience: 10, energy: 10 },
-        usage: '☀️ 恢復 10 點旅人能量 · 🛡️ 提升 10 點心靈韌性'
+        usage: '☀️ 恢復 10 點光量 · 🛡️ 提升 10 點心靈韌性'
     },
     'item_56': {
         id: 'item_56', name: '星砂許願瓶', category: 'equipment', icon: '🌟', 
@@ -257,7 +257,7 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_57', name: '螢光蕈菇燉湯', category: 'consumable', icon: '🍲', 
         desc: '用螢光小蘑菇與神祕樹果熬煮的溫熱濃湯，能迅速恢復精神。', rarity: 'rare',
         effect: { energy: 35, resilience: 5 },
-        usage: '☀️ 恢復 35 點旅人能量 · 🛡️ 提升 5 點心靈韌性'
+        usage: '☀️ 恢復 35 點光量 · 🛡️ 提升 5 點心靈韌性'
     },
     'item_58': {
         id: 'item_58', name: '海風齒輪風鈴', category: 'equipment', icon: '🎐', 
@@ -269,31 +269,31 @@ export const ITEM_DATABASE: Record<string, ItemDefinition> = {
         id: 'item_59', name: '四季花果蜜', category: 'consumable', icon: '🍯', 
         desc: '調和春櫻花瓣與神祕樹果精華的天然果蜜，甜而不膩。', rarity: 'common',
         effect: { energy: 30 },
-        usage: '☀️ 恢復 30 點旅人能量'
+        usage: '☀️ 恢復 30 點光量'
     },
     'item_60': {
         id: 'item_60', name: '四葉幸運御守', category: 'equipment', icon: '🍀', 
         desc: '結合四葉幸運草與太陽結晶的手工御守，帶來平靜與力量。', rarity: 'epic',
         effect: { resilience: 25, perception: 15, energy: 40 },
-        usage: '☀️ 恢復 40 點旅人能量 · 🛡️ 提升 25 點心靈韌性 · 👁️ 提升 15 點感知力（裝備後生效）'
+        usage: '☀️ 恢復 40 點光量 · 🛡️ 提升 25 點心靈韌性 · 👁️ 提升 15 點感知力（裝備後生效）'
     },
     'item_61': {
         id: 'item_61', name: '楓香暖身茶包', category: 'consumable', icon: '🍁', 
         desc: '揉合楓紅落葉與果香的溫潤茶包，驅散寒意與煩躁。', rarity: 'common',
         effect: { resilience: 12, energy: 15 },
-        usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 12 點心靈韌性'
+        usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 12 點心靈韌性'
     },
     'item_62': {
         id: 'item_62', name: '雪晶清涼露', category: 'consumable', icon: '❄️', 
         desc: '由冬日雪晶片淬鍊而成的清涼飲品，瞬間提神醒腦。', rarity: 'rare',
         effect: { perception: 12, energy: 20 },
-        usage: '☀️ 恢復 20 點旅人能量 · 👁️ 提升 12 點感知力'
+        usage: '☀️ 恢復 20 點光量 · 👁️ 提升 12 點感知力'
     },
     'item_63': {
         id: 'item_63', name: '朝陽種子餅乾', category: 'consumable', icon: '🌻', 
         desc: '加入向日葵種子烘焙的酥脆餅乾，充滿陽光溫暖氣息。', rarity: 'common',
         effect: { energy: 25 },
-        usage: '☀️ 恢復 25 點旅人能量'
+        usage: '☀️ 恢復 25 點光量'
     },
     'item_64': {
         id: 'item_64', name: '記憶星圖吊墜', category: 'equipment', icon: '🔮', 

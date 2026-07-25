@@ -594,7 +594,7 @@ catContainer.innerHTML = `
     <img src="./assets/images/maincat.gif" 
          alt="小鎮貓咪" 
          style="
-            width: 100px;
+            width: 80px;
             height: auto;
             max-width: 30vw;
             filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));

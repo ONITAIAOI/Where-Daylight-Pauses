@@ -22,7 +22,7 @@ export class DailyMoodUI {
             id: 'item_51', 
             name: '暖心熱茶', 
             desc: '驅散寒意，帶來溫暖療癒感。',
-            usage: '☀️ 恢復 15 點旅人能量 · 🛡️ 提升 3 點心靈韌性'
+            usage: '☀️ 恢復 15 點光量 · 🛡️ 提升 3 點心靈韌性'
         },
         { 
             id: 'item_52', 

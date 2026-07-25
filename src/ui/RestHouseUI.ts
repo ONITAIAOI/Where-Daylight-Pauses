@@ -477,7 +477,7 @@ export class RestHouseUI {
                             SERENE COTTAGE
                         </div>
                         <h1 style="margin: 0; font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 8px;">
-                            🌙 心境小屋
+                            心境小屋
                             <span style="font-size: 10px; font-weight: 300; color: #d4c9b8; text-shadow: none;">· 沉澱時光</span>
                         </h1>
                     </div>
@@ -565,7 +565,7 @@ export class RestHouseUI {
                     font-size: 10px; font-weight: 500; color: #8a7a5a; 
                     letter-spacing: 0.8px; text-transform: uppercase;
                     margin-bottom: 2px;
-                ">🌙 沉澱完成</div>
+                "> 沉澱完成</div>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     ${this.renderClaimReadyHTML()}
                 </div>
@@ -578,7 +578,7 @@ export class RestHouseUI {
                     font-size: 10px; font-weight: 500; color: #8a7a5a; 
                     letter-spacing: 0.8px; text-transform: uppercase;
                     margin-bottom: 2px;
-                ">🌙 沉澱時光</div>
+                "> 沉澱時光</div>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     ${this.renderRestingHTML(restingUntil)}
                 </div>
@@ -590,7 +590,7 @@ export class RestHouseUI {
                 font-size: 10px; font-weight: 500; color: #8a7a5a; 
                 letter-spacing: 0.8px; text-transform: uppercase;
                 margin-bottom: 2px;
-            ">🌙 沉澱時光</div>
+            "> 沉澱時光</div>
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 ${this.renderReadyHTML()}
             </div>
@@ -634,7 +634,7 @@ export class RestHouseUI {
                 </div>
                 <div style="font-size: 11px; color: #a89f91; line-height: 1.8; text-align: left;">
                     • 進入 8 小時沉澱期，期間無法探索小鎮<br>
-                    • 聊天大廳仍可正常使用<br>
+                    • 鎮民廣場(聊天大廳)仍可正常使用<br>
                     • 倒數結束後可領取 500 暖陽幣獎勵
                 </div>
             </div>
@@ -836,7 +836,7 @@ export class RestHouseUI {
                 this.showConfirmModal({
                     icon: '🌙',
                     title: '準備好沉澱心靈了嗎？',
-                    desc: '點擊確認後將進入 8 小時休息。\n期間「小鎮探索」將暫停（聊天大廳除外）。\n醒來後可領取 500 暖陽幣 ✨',
+                    desc: '點擊確認後將進入 8 小時休息。\n期間「小鎮探索」將暫停（鎮民廣場除外）。\n醒來後可領取 500 暖陽幣 ✨',
                     confirmText: '開始沉澱',
                     cancelText: '再想想',
                     onConfirm: () => {
