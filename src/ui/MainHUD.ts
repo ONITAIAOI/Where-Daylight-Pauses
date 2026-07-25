@@ -591,10 +591,10 @@ catContainer.style.cssText = `
     animation: catFloat 4s ease-in-out infinite;
 `;
 catContainer.innerHTML = `
-    <img src="./assets/images/maincat.gif" 
+    <img src="./assets/images/mainhudcat.gif" 
          alt="小鎮貓咪" 
          style="
-            width: 80px;
+            width: 100px;
             height: auto;
             max-width: 30vw;
             filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
