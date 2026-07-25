@@ -179,6 +179,10 @@ export class MainHUD {
                     0% { opacity: 0.15; transform: translateY(0) scale(1); }
                     50% { opacity: 0.5; transform: translateY(-20px) scale(1.2); }
                     100% { opacity: 0.15; transform: translateY(0) scale(1); }
+                @keyframes glowFloat {
+                    0% { opacity: 0.15; transform: translateY(0) scale(1); }
+                    50% { opacity: 0.5; transform: translateY(-20px) scale(1.2); }
+                    100% { opacity: 0.15; transform: translateY(0) scale(1); }
                 }
                 .glow-particle {
                     position: absolute;
@@ -575,6 +579,31 @@ export class MainHUD {
                 </div>
             </div>
         `;
+
+        const catContainer = document.createElement('div');
+catContainer.style.cssText = `
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 901;
+    pointer-events: none;
+    opacity: 0.9;
+    animation: catFloat 4s ease-in-out infinite;
+`;
+catContainer.innerHTML = `
+    <img src="./assets/images/maincat.gif" 
+         alt="小鎮貓咪" 
+         style="
+            width: 100px;
+            height: auto;
+            max-width: 30vw;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
+            border-radius: 12px;
+            background: rgba(0,0,0,0.15);
+            padding: 2px;
+         ">
+`;
+this.container.appendChild(catContainer);
 
         document.body.appendChild(this.container);
         this.createGlowParticles();

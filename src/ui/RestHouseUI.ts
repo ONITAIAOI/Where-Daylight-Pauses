@@ -50,6 +50,236 @@ export class RestHouseUI {
                     0% { background-position: -200% center; }
                     100% { background-position: 200% center; }
                 }
+
+                // ============================================================
+                // ✨ 皮膚動畫 Keyframes（複製自 ChatUI）
+                // ============================================================
+
+                @keyframes skinGlowPulse {
+                    0%, 100% { filter: brightness(1); transform: scale(1); }
+                    50% { filter: brightness(1.2); transform: scale(1.02); }
+                }
+                @keyframes borderFlow {
+                    0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
+                    50% { border-color: rgba(254, 240, 138, 1); box-shadow: 0 0 35px rgba(234, 179, 8, 0.9); }
+                    100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
+                }
+                @keyframes auroraFlow {
+                    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+                    50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
+                    100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+                }
+                @keyframes cosmicSpin {
+                    0% { background-position: 0% 50%; }
+                    100% { background-position: 200% 50%; }
+                }
+                @keyframes cherryFall {
+                    0%, 100% { filter: brightness(1); }
+                    50% { filter: brightness(1.1); box-shadow: 0 0 30px rgba(255, 182, 193, 0.5); }
+                }
+                @keyframes enchantedGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+                    50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.7), 0 0 60px rgba(236, 72, 153, 0.3); }
+                }
+                @keyframes magmaFlow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                @keyframes cyberGlitch {
+                    0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+                    50% { filter: hue-rotate(30deg) brightness(1.2); box-shadow: 0 0 25px rgba(45, 212, 191, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.6); }
+                }
+                @keyframes crystalShimmer {
+                    0%, 100% { opacity: 0.7; transform: scale(1); }
+                    50% { opacity: 1; transform: scale(1.03); text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+                }
+                @keyframes rainbowFlow {
+                    0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+                    100% { background-position: 200% 50%; filter: hue-rotate(360deg); }
+                }
+                @keyframes lightningStrike {
+                    0%, 89%, 91%, 93%, 95%, 97%, 100% { opacity: 0; transform: scale(0.8); }
+                    90% { opacity: 1; transform: scale(1.2); }
+                    92% { opacity: 0.6; transform: scale(1.1); }
+                    94% { opacity: 1; transform: scale(1.3); }
+                    96% { opacity: 0; transform: scale(0.9); }
+                    98% { opacity: 0.8; transform: scale(1.1); }
+                }
+                @keyframes lightningPulse {
+                    0%, 100% { transform: scale(1); opacity: 0.2; }
+                    50% { transform: scale(1.8); opacity: 0.6; }
+                }
+                @keyframes flameDance {
+                    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+                    25% { transform: scale(1.1) rotate(-3deg); opacity: 0.9; }
+                    50% { transform: scale(0.95) rotate(3deg); opacity: 0.7; }
+                    75% { transform: scale(1.05) rotate(-2deg); opacity: 0.8; }
+                }
+                @keyframes stormSpin {
+                    0% { transform: rotate(0deg) scale(1); }
+                    50% { transform: rotate(180deg) scale(1.1); }
+                    100% { transform: rotate(360deg) scale(1); }
+                }
+                @keyframes meteorShower {
+                    0% { transform: translateX(-20px) translateY(-20px) scale(0.5); opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { transform: translateX(40px) translateY(40px) scale(1.5); opacity: 0; }
+                }
+                @keyframes candleFlicker {
+                    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+                    20% { transform: scale(1.05) rotate(2deg); opacity: 0.9; }
+                    40% { transform: scale(0.95) rotate(-2deg); opacity: 0.6; }
+                    60% { transform: scale(1.08) rotate(1deg); opacity: 0.8; }
+                    80% { transform: scale(0.92) rotate(-1deg); opacity: 0.7; }
+                }
+
+                // ============================================================
+                // ✨ 皮膚專屬動畫（extraClass）- 複製自 ChatUI
+                // ============================================================
+
+                .candle-skin::before {
+                    content: '🕯️';
+                    position: absolute;
+                    top: 10%;
+                    right: 8%;
+                    font-size: 24px;
+                    animation: candleFlicker 1.5s ease-in-out infinite;
+                    pointer-events: none;
+                    filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));
+                    z-index: 2;
+                }
+                .candle-skin::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    right: -50%;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(circle at 70% 20%, rgba(251, 191, 36, 0.08) 0%, transparent 60%);
+                    animation: candleFlicker 2s ease-in-out infinite;
+                    pointer-events: none;
+                    border-radius: inherit;
+                    z-index: 1;
+                }
+
+                .rainbow-skin::before {
+                    content: '✨';
+                    position: absolute;
+                    top: 10%;
+                    left: 10%;
+                    font-size: 20px;
+                    animation: meteorShower 3s ease-in-out infinite;
+                    pointer-events: none;
+                    z-index: 2;
+                }
+                .rainbow-skin::after {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent 30%, rgba(255,255,255,0.05));
+                    pointer-events: none;
+                    border-radius: inherit;
+                    z-index: 1;
+                }
+
+                .storm-skin::before {
+                    content: '🌀';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 48px;
+                    opacity: 0.08;
+                    animation: stormSpin 8s linear infinite;
+                    pointer-events: none;
+                    z-index: 1;
+                }
+                .storm-skin::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    left: -50%;
+                    width: 200%;
+                    height: 200%;
+                    background: radial-gradient(circle at 50% 50%, rgba(148, 163, 184, 0.05) 0%, transparent 60%);
+                    animation: stormSpin 12s linear infinite reverse;
+                    pointer-events: none;
+                    border-radius: inherit;
+                    z-index: 1;
+                }
+
+                .star-skin::before {
+                    content: '⭐';
+                    position: absolute;
+                    top: 15%;
+                    right: 12%;
+                    font-size: 18px;
+                    animation: meteorShower 2.5s ease-in-out infinite;
+                    pointer-events: none;
+                    filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.6));
+                    z-index: 2;
+                }
+                .star-skin::after {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.05) 0%, transparent 50%);
+                    animation: skinGlowPulse 3s ease-in-out infinite;
+                    pointer-events: none;
+                    border-radius: inherit;
+                    z-index: 1;
+                }
+
+                .lightning-skin::before {
+                    content: '⚡';
+                    position: absolute;
+                    top: 20%;
+                    right: 10%;
+                    font-size: 30px;
+                    opacity: 0;
+                    animation: lightningStrike 4s ease-in-out infinite;
+                    pointer-events: none;
+                    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
+                    z-index: 2;
+                }
+                .lightning-skin::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    left: -50%;
+                    width: 200%;
+                    height: 200%;
+                    background: radial-gradient(circle at 60% 30%, rgba(251, 191, 36, 0.06) 0%, transparent 50%);
+                    animation: lightningPulse 3s ease-in-out infinite;
+                    pointer-events: none;
+                    border-radius: inherit;
+                    z-index: 1;
+                }
+
+                .phoenix-skin::before {
+                    content: '🔥';
+                    position: absolute;
+                    top: 10%;
+                    right: 8%;
+                    font-size: 22px;
+                    animation: flameDance 1.5s ease-in-out infinite;
+                    pointer-events: none;
+                    filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.5));
+                    z-index: 2;
+                }
+                .phoenix-skin::after {
+                    content: '✦';
+                    position: absolute;
+                    bottom: 15%;
+                    left: 10%;
+                    font-size: 14px;
+                    opacity: 0.3;
+                    animation: meteorShower 3s ease-in-out infinite;
+                    pointer-events: none;
+                    z-index: 2;
+                }
+
                 .rest-glow-particle {
                     position: absolute;
                     border-radius: 50%;
@@ -294,6 +524,7 @@ export class RestHouseUI {
         const restingUntil = profileAny?.restingUntil ? new Date(profileAny.restingUntil).getTime() : 0;
         const now = Date.now();
         const isResting = restingUntil > now;
+        const isReadyToClaim = restingUntil > 0 && restingUntil <= now;
 
         const coinsEl = document.getElementById('rest-coins-display');
         if (coinsEl) {
@@ -316,19 +547,43 @@ export class RestHouseUI {
         const bodyContent = document.getElementById('rest-house-body-content');
         if (bodyContent) {
             bodyContent.innerHTML = this.activeTab === 'rest'
-                ? this.renderRestTabContent(profile, restingUntil)
+                ? this.renderRestTabContent(profile, restingUntil, isResting, isReadyToClaim)
                 : this.renderWardrobeTabContent(profile);
         }
 
-        this.bindActionEvents(restingUntil);
+        this.bindActionEvents(restingUntil, isReadyToClaim);
 
         if (this.activeTab === 'rest' && isResting) {
             this.startCountdown(restingUntil);
         }
     }
 
-    private renderRestTabContent(profile: PlayerProfile, restingUntil: number): string {
-        const hasActiveRest = restingUntil > Date.now();
+    private renderRestTabContent(profile: PlayerProfile, restingUntil: number, isResting: boolean, isReadyToClaim: boolean): string {
+        if (isReadyToClaim) {
+            return `
+                <div style="
+                    font-size: 10px; font-weight: 500; color: #8a7a5a; 
+                    letter-spacing: 0.8px; text-transform: uppercase;
+                    margin-bottom: 2px;
+                ">🌙 沉澱完成</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${this.renderClaimReadyHTML()}
+                </div>
+            `;
+        }
+
+        if (isResting) {
+            return `
+                <div style="
+                    font-size: 10px; font-weight: 500; color: #8a7a5a; 
+                    letter-spacing: 0.8px; text-transform: uppercase;
+                    margin-bottom: 2px;
+                ">🌙 沉澱時光</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${this.renderRestingHTML(restingUntil)}
+                </div>
+            `;
+        }
 
         return `
             <div style="
@@ -336,14 +591,34 @@ export class RestHouseUI {
                 letter-spacing: 0.8px; text-transform: uppercase;
                 margin-bottom: 2px;
             ">🌙 沉澱時光</div>
-            <p style="margin: 0; font-size: 12px; color: #a89f91; line-height: 1.6;">
-                放慢腳步，讓心靈沉澱。<br>
-                在此休息 <span style="color: #eab308; font-weight: 600;">8 小時</span> 可獲得 
-                <span style="color: #eab308; font-weight: 600;">☀️ 500 暖陽幣</span>。
-            </p>
-            <div id="rest-content-area" style="display: flex; flex-direction: column; gap: 12px;">
-                ${hasActiveRest ? this.renderRestingHTML(restingUntil) : this.renderReadyHTML()}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                ${this.renderReadyHTML()}
             </div>
+        `;
+    }
+
+    private renderClaimReadyHTML(): string {
+        return `
+            <div style="
+                background: rgba(74, 222, 128, 0.08); 
+                border: 1px solid rgba(74, 222, 128, 0.2); 
+                border-radius: 12px; padding: 18px; text-align: center;
+            ">
+                <div style="font-size: 32px; margin-bottom: 4px; animation: rewardBurst 0.6s ease forwards;">✨</div>
+                <div style="font-size: 15px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">心靈已完全充電！</div>
+                <div style="font-size: 11px; color: #a89f91;">你已完成 8 小時的深度休息</div>
+            </div>
+            <button id="claim-rest-btn" style="
+                width: 100%; padding: 13px;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                border: none; border-radius: 12px; color: #fff;
+                font-size: 14px; font-weight: 700; cursor: pointer;
+                box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
+                transition: all 0.2s;
+                display: flex; align-items: center; justify-content: center; gap: 8px;
+            ">
+                <span>🎁</span> 領取 500 暖陽幣
+            </button>
         `;
     }
 
@@ -378,33 +653,6 @@ export class RestHouseUI {
 
     private renderRestingHTML(restingUntil: number): string {
         const remaining = Math.max(0, restingUntil - Date.now());
-        const isReadyToClaim = remaining === 0;
-
-        if (isReadyToClaim) {
-            return `
-                <div style="
-                    background: rgba(74, 222, 128, 0.06); 
-                    border: 1px solid rgba(74, 222, 128, 0.2); 
-                    border-radius: 12px; padding: 18px; text-align: center;
-                ">
-                    <div style="font-size: 32px; margin-bottom: 4px; animation: rewardBurst 0.6s ease forwards;">✨</div>
-                    <div style="font-size: 15px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">心靈已完全充電！</div>
-                    <div style="font-size: 11px; color: #a89f91;">你已完成 8 小時的深度休息</div>
-                </div>
-                <button id="claim-rest-btn" style="
-                    width: 100%; padding: 13px;
-                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                    border: none; border-radius: 12px; color: #fff;
-                    font-size: 14px; font-weight: 700; cursor: pointer;
-                    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
-                    transition: all 0.2s;
-                    display: flex; align-items: center; justify-content: center; gap: 8px;
-                ">
-                    <span>🎁</span> 領取 500 暖陽幣
-                </button>
-            `;
-        }
-
         const hours = Math.floor(remaining / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
@@ -547,6 +795,7 @@ export class RestHouseUI {
                         </div>
                         <div>${actionBtnHTML}</div>
                     </div>
+                    <!-- ✅ 預覽區：完整支援 extraClass + 偽元素動畫 -->
                     <div style="
                         background: rgba(0,0,0,0.2); 
                         padding: 8px 10px; 
@@ -580,7 +829,7 @@ export class RestHouseUI {
         `;
     }
 
-    private bindActionEvents(restingUntil: number) {
+    private bindActionEvents(restingUntil: number, isReadyToClaim: boolean) {
         const startBtn = document.getElementById('start-rest-btn');
         if (startBtn) {
             startBtn.onclick = () => {
