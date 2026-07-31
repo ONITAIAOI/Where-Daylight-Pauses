@@ -9,7 +9,7 @@ export class TownMapUI {
         const dayOfWeek = now.getDay();
         const dateOfMonth = now.getDate();
 
-        const isForestOpen = [0, 3, 5].includes(dayOfWeek);
+        const isForestOpen = [0, 3, 6].includes(dayOfWeek);
         const isRuinsOpen = (dateOfMonth * 7) % 3 === 0;
 
         return [
