@@ -41,7 +41,6 @@ export class MainHUD {
     private townMapUI: TownMapUI | null = null;
     private alchemistWorkshopUI: AlchemistWorkshopUI | null = null;
     private forestUI: ForestExplorerUI | null = null;
-    private glowParticles: HTMLDivElement[] = [];
     private currentSaying: string = '';
 
     constructor(profile: PlayerProfile | null, authUid: string, options: MainHUDOptions) {
@@ -175,18 +174,6 @@ export class MainHUD {
                     from { opacity: 1; transform: translate(-50%, 0); }
                     to { opacity: 0; transform: translate(-50%, -15px); }
                 }
-                @keyframes glowFloat {
-                    0% { opacity: 0.15; transform: translateY(0) scale(1); }
-                    50% { opacity: 0.5; transform: translateY(-20px) scale(1.2); }
-                    100% { opacity: 0.15; transform: translateY(0) scale(1); }
-                }
-                .glow-particle {
-                    position: absolute;
-                    border-radius: 50%;
-                    background: radial-gradient(circle, rgba(234, 179, 8, 0.4) 0%, rgba(234, 179, 8, 0) 70%);
-                    pointer-events: none;
-                    animation: glowFloat 6s ease-in-out infinite;
-                }
                 .station-card {
                     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     position: relative;
@@ -273,37 +260,6 @@ export class MainHUD {
                 this.isToastActive = false;
             }, 300);
         }, 3500);
-    }
-
-    private createGlowParticles() {
-        const container = this.container;
-        if (!container) return;
-
-        this.glowParticles.forEach(p => p.remove());
-        this.glowParticles = [];
-
-        const panel = container.querySelector('.main-hud-panel');
-        if (!panel) return;
-
-        for (let i = 0; i < 15; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'glow-particle';
-            const size = 4 + Math.random() * 8;
-            const x = 10 + Math.random() * 80;
-            const y = 10 + Math.random() * 80;
-            const delay = Math.random() * 6;
-            const duration = 5 + Math.random() * 4;
-
-            particle.style.cssText = `
-                width: ${size}px; height: ${size}px;
-                left: ${x}%; top: ${y}%;
-                animation-delay: ${delay}s;
-                animation-duration: ${duration}s;
-                opacity: ${0.1 + Math.random() * 0.3};
-            `;
-            panel.appendChild(particle);
-            this.glowParticles.push(particle);
-        }
     }
 
     private render() {
@@ -577,7 +533,6 @@ export class MainHUD {
         `;
 
         document.body.appendChild(this.container);
-        this.createGlowParticles();
         this.bindEvents();
     }
 
@@ -759,9 +714,6 @@ export class MainHUD {
     }
 
     public remove() {
-        this.glowParticles.forEach(p => p.remove());
-        this.glowParticles = [];
-
         if (this.inventoryUI) {
             this.inventoryUI.remove();
             this.inventoryUI = null;
