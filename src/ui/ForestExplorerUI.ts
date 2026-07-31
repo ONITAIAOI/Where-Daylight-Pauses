@@ -19,6 +19,11 @@ export class ForestExplorerUI {
     private currentProfile: any = null;
     private isExploring: boolean = false;
     private exploreHistory: string[] = [];
+    private canvasElement: HTMLCanvasElement | null = null;
+    private canvasCtx: CanvasRenderingContext2D | null = null;
+    private explorationProgress: number = 0;
+    private animationFrame: number | null = null;
+    private isAnimating: boolean = false;
 
     constructor(uid: string, onClose: () => void) {
         this.uid = uid;
@@ -47,28 +52,33 @@ export class ForestExplorerUI {
             style.id = 'forest-styles';
             style.innerHTML = `
                 @keyframes forestPopIn {
-                    from { opacity: 0; transform: translateY(12px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes forestFog {
-                    0% { opacity: 0.3; transform: translateX(0) scale(1); }
-                    50% { opacity: 0.8; transform: translateX(30px) scale(1.05); }
-                    100% { opacity: 0.3; transform: translateX(0) scale(1); }
-                }
-                @keyframes forestFog2 {
                     0% { opacity: 0.2; transform: translateX(0) scale(1); }
-                    50% { opacity: 0.6; transform: translateX(-20px) scale(1.08); }
+                    50% { opacity: 0.5; transform: translateX(40px) scale(1.05); }
                     100% { opacity: 0.2; transform: translateX(0) scale(1); }
                 }
+                @keyframes forestFog2 {
+                    0% { opacity: 0.15; transform: translateX(0) scale(1); }
+                    50% { opacity: 0.4; transform: translateX(-30px) scale(1.08); }
+                    100% { opacity: 0.15; transform: translateX(0) scale(1); }
+                }
+                @keyframes forestFog3 {
+                    0% { opacity: 0.1; transform: translateX(0) scale(1); }
+                    50% { opacity: 0.3; transform: translateX(50px) scale(1.03); }
+                    100% { opacity: 0.1; transform: translateX(0) scale(1); }
+                }
                 @keyframes eventReveal {
-                    0% { opacity: 0; transform: scale(0.85) rotate(-3deg); }
-                    50% { opacity: 1; transform: scale(1.03) rotate(1deg); }
+                    0% { opacity: 0; transform: scale(0.92) rotate(-2deg); }
+                    50% { opacity: 1; transform: scale(1.02) rotate(1deg); }
                     100% { opacity: 1; transform: scale(1) rotate(0deg); }
                 }
-                @keyframes leafFall {
-                    0% { transform: translateY(-10px) rotate(0deg) scale(0.5); opacity: 0; }
-                    50% { opacity: 1; transform: translateY(10px) rotate(180deg) scale(1); }
-                    100% { transform: translateY(30px) rotate(360deg) scale(0.5); opacity: 0; }
+                @keyframes lightRay {
+                    0% { opacity: 0; transform: translateX(-30px) scaleX(0.5); }
+                    50% { opacity: 0.15; transform: translateX(0) scaleX(1); }
+                    100% { opacity: 0; transform: translateX(30px) scaleX(0.5); }
                 }
                 @keyframes pulseGlow {
                     0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.1); }
@@ -82,6 +92,16 @@ export class ForestExplorerUI {
                     from { opacity: 1; transform: translate(-50%, 0); }
                     to { opacity: 0; transform: translate(-50%, -15px); }
                 }
+                @keyframes leafFloat {
+                    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(-60px) rotate(360deg) scale(0.5); opacity: 0; }
+                }
+                @keyframes spin {
+                    to { transform: translate(-50%, -50%) rotate(360deg); }
+                }
+
                 .forest-explore-btn {
                     position: relative;
                     overflow: hidden;
@@ -94,19 +114,6 @@ export class ForestExplorerUI {
                 .forest-explore-btn:active {
                     transform: translateY(0) scale(0.97);
                 }
-                .forest-event-card {
-                    animation: eventReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                .forest-fog {
-                    animation: forestFog 8s ease-in-out infinite;
-                }
-                .forest-fog-2 {
-                    animation: forestFog2 10s ease-in-out infinite;
-                }
-                .explore-counter {
-                    animation: pulseGlow 2s ease-in-out infinite;
-                }
-
                 .forest-explore-btn.loading {
                     pointer-events: none;
                     opacity: 0.7;
@@ -124,16 +131,9 @@ export class ForestExplorerUI {
                     animation: spin 0.8s linear infinite;
                     transform: translate(-50%, -50%);
                 }
-                @keyframes spin {
-                    to { transform: translate(-50%, -50%) rotate(360deg); }
-                }
 
-                .forest-leaf {
-                    position: fixed;
-                    font-size: 18px;
-                    pointer-events: none;
-                    z-index: 999;
-                    animation: leafFall 2.5s ease-in forwards;
+                .forest-event-card {
+                    animation: eventReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
 
                 .forest-continue-btn {
@@ -143,8 +143,43 @@ export class ForestExplorerUI {
                     background: rgba(52, 211, 153, 0.15) !important;
                     transform: translateY(-1px);
                 }
-                .forest-continue-btn:active {
-                    transform: translateY(0) scale(0.97);
+
+                .light-ray {
+                    position: absolute;
+                    top: -20%;
+                    width: 2px;
+                    height: 60%;
+                    background: linear-gradient(180deg, 
+                        rgba(52, 211, 153, 0.15) 0%, 
+                        rgba(52, 211, 153, 0.02) 100%
+                    );
+                    transform: skewX(-10deg);
+                    animation: lightRay 4s ease-in-out infinite;
+                    pointer-events: none;
+                    filter: blur(2px);
+                }
+                .light-ray:nth-child(1) { left: 15%; animation-delay: 0s; }
+                .light-ray:nth-child(2) { left: 35%; animation-delay: 1.2s; width: 3px; }
+                .light-ray:nth-child(3) { left: 55%; animation-delay: 2.5s; }
+                .light-ray:nth-child(4) { left: 75%; animation-delay: 0.8s; width: 1px; }
+
+                .explore-counter {
+                    animation: pulseGlow 2s ease-in-out infinite;
+                }
+
+                .forest-path-canvas {
+                    width: 100%;
+                    height: 120px;
+                    border-radius: 12px;
+                    background: rgba(0,0,0,0.2);
+                    border: 1px solid rgba(52, 211, 153, 0.04);
+                }
+
+                .leaf-particle {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 999;
+                    animation: leafFloat 4s ease-in forwards;
                 }
 
                 @media (max-width: 480px) {
@@ -161,36 +196,206 @@ export class ForestExplorerUI {
                         align-items: flex-end !important;
                         padding: 0 !important;
                     }
+                    .forest-path-canvas {
+                        height: 80px;
+                    }
                 }
             `;
             document.head.appendChild(style);
         }
     }
 
-    private createLeafEffect() {
-        const leaves = ['🍃', '🌿', '🍂', '🌱'];
-        for (let i = 0; i < 6; i++) {
-            setTimeout(() => {
-                const leaf = document.createElement('div');
-                leaf.className = 'forest-leaf';
-                leaf.textContent = leaves[Math.floor(Math.random() * leaves.length)];
-                leaf.style.left = (10 + Math.random() * 80) + '%';
-                leaf.style.top = '-10px';
-                leaf.style.fontSize = (14 + Math.random() * 16) + 'px';
-                leaf.style.animationDuration = (2 + Math.random() * 2) + 's';
-                leaf.style.opacity = '0.4 + Math.random() * 0.4';
-                document.body.appendChild(leaf);
-                setTimeout(() => leaf.remove(), 4000);
-            }, i * 300);
+    private initCanvas() {
+        this.canvasElement = document.getElementById('forest-path') as HTMLCanvasElement;
+        if (this.canvasElement) {
+            const rect = this.canvasElement.getBoundingClientRect();
+            this.canvasElement.width = rect.width || 500;
+            this.canvasElement.height = rect.height || 120;
+            this.canvasCtx = this.canvasElement.getContext('2d');
+            this.drawPath();
         }
     }
 
-    // ✅ 更新右上角探索次數
+    private drawPath() {
+        const canvas = this.canvasElement;
+        const ctx = this.canvasCtx;
+        if (!canvas || !ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const startX = 40;
+        const startY = h - 30;
+        const endX = w - 40;
+        const endY = 30;
+
+        const points: { x: number; y: number }[] = [];
+        const segments = 30;
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const x = startX + (endX - startX) * t;
+            const wave = Math.sin(t * Math.PI * 2.5) * 20 + Math.sin(t * Math.PI * 5) * 8;
+            const y = startY + (endY - startY) * t + wave * (1 - t * 0.5);
+            points.push({ x, y });
+        }
+
+        // 路徑（發光虛線）
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.12)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 路徑光暈
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.04)';
+        ctx.lineWidth = 12;
+        ctx.stroke();
+
+        // 樹木（沿路徑）
+        for (let i = 0; i < points.length; i += 3) {
+            const p = points[i];
+            const t = i / points.length;
+            const side = (i % 2 === 0) ? 1 : -1;
+            const offset = 15 + Math.sin(i * 0.5) * 8;
+
+            ctx.fillStyle = 'rgba(60, 40, 30, 0.2)';
+            ctx.fillRect(p.x + side * offset - 1, p.y - 8, 2, 8);
+
+            ctx.beginPath();
+            ctx.moveTo(p.x + side * offset, p.y - 18);
+            ctx.lineTo(p.x + side * offset - 8, p.y - 5);
+            ctx.lineTo(p.x + side * offset + 8, p.y - 5);
+            ctx.closePath();
+            const isReached = t < this.explorationProgress;
+            ctx.fillStyle = isReached ? 
+                'rgba(52, 211, 153, 0.12)' : 
+                'rgba(255, 255, 255, 0.03)';
+            ctx.fill();
+        }
+
+        // 探索光點
+        const progressIndex = Math.floor(this.explorationProgress * points.length);
+        const currentPoint = points[Math.min(progressIndex, points.length - 1)];
+
+        // 光暈
+        const gradient = ctx.createRadialGradient(
+            currentPoint.x, currentPoint.y, 2,
+            currentPoint.x, currentPoint.y, 20
+        );
+        gradient.addColorStop(0, 'rgba(52, 211, 153, 0.5)');
+        gradient.addColorStop(0.5, 'rgba(52, 211, 153, 0.12)');
+        gradient.addColorStop(1, 'rgba(52, 211, 153, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(currentPoint.x, currentPoint.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 光點本體
+        ctx.shadowColor = 'rgba(52, 211, 153, 0.4)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(currentPoint.x, currentPoint.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#34d399';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(currentPoint.x, currentPoint.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        // 起點
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.beginPath();
+        ctx.arc(startX, startY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌲', startX, startY + 20);
+
+        // 終點
+        if (this.explorationProgress >= 1) {
+            const grad = ctx.createRadialGradient(endX, endY, 2, endX, endY, 25);
+            grad.addColorStop(0, 'rgba(251, 191, 36, 0.5)');
+            grad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(endX, endY, 25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.8)';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('✨', endX, endY + 4);
+        } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.beginPath();
+            ctx.arc(endX, endY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌫️', endX, endY + 18);
+        }
+
+        // 進度標記
+        const totalSteps = 5;
+        for (let i = 0; i < totalSteps; i++) {
+            const t = (i + 1) / (totalSteps + 1);
+            const idx = Math.floor(t * points.length);
+            if (idx < points.length) {
+                const p = points[idx];
+                const isReached = this.explorationProgress >= t;
+                ctx.fillStyle = isReached ? 'rgba(52, 211, 153, 0.15)' : 'rgba(255, 255, 255, 0.04)';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                if (isReached) {
+                    ctx.strokeStyle = 'rgba(52, 211, 153, 0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    private createLeafEffect() {
+        const leaves = ['🍃', '🌿', '🍂', '🌱'];
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf-particle';
+                leaf.textContent = leaves[Math.floor(Math.random() * leaves.length)];
+                leaf.style.left = (10 + Math.random() * 80) + '%';
+                leaf.style.top = (20 + Math.random() * 30) + '%';
+                leaf.style.fontSize = (14 + Math.random() * 16) + 'px';
+                leaf.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+                document.body.appendChild(leaf);
+                setTimeout(() => leaf.remove(), 4500);
+            }, i * 200);
+        }
+    }
+
     private updateCounter() {
         const counter = document.querySelector('.explore-counter strong');
         if (counter) {
             counter.textContent = String(this.remainingExplores);
         }
+        // 更新進度
+        this.explorationProgress = (5 - this.remainingExplores) / 5;
     }
 
     private render() {
@@ -200,20 +405,52 @@ export class ForestExplorerUI {
         this.overlayContainer.className = 'forest-overlay-wrapper';
         this.overlayContainer.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-            background: rgba(14, 12, 10, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(8, 6, 4, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             padding: 0;
             box-sizing: border-box;
         `;
 
+        const fogHTML = `
+            <div class="forest-fog" style="
+                position: absolute; bottom: 0; left: -20%; right: -20%; height: 80px;
+                background: linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.03) 50%, rgba(52, 211, 153, 0.06) 100%);
+                pointer-events: none; border-radius: 50%;
+                filter: blur(25px);
+                z-index: 0;
+            "></div>
+            <div class="forest-fog-2" style="
+                position: absolute; bottom: 10px; left: -30%; right: -30%; height: 60px;
+                background: linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.02) 50%, rgba(52, 211, 153, 0.04) 100%);
+                pointer-events: none; border-radius: 50%;
+                filter: blur(35px);
+                z-index: 0;
+            "></div>
+            <div class="forest-fog-3" style="
+                position: absolute; bottom: 20px; left: -40%; right: -40%; height: 40px;
+                background: linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.015) 50%, rgba(52, 211, 153, 0.03) 100%);
+                pointer-events: none; border-radius: 50%;
+                filter: blur(45px);
+                z-index: 0;
+            "></div>
+        `;
+
+        const lightRays = `
+            <div class="light-ray"></div>
+            <div class="light-ray"></div>
+            <div class="light-ray"></div>
+            <div class="light-ray"></div>
+        `;
+
         this.overlayContainer.innerHTML = `
             <div class="forest-modal-container" style="
-                background: rgba(28, 23, 20, 0.95);
-                backdrop-filter: blur(12px);
-                border: none;
+                background: rgba(16, 14, 12, 0.95);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(52, 211, 153, 0.04);
                 border-radius: 0;
                 width: 100vw;
                 max-width: 100vw;
@@ -221,77 +458,70 @@ export class ForestExplorerUI {
                 max-height: 100dvh;
                 display: flex;
                 flex-direction: column;
-                animation: forestPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                animation: forestPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 box-sizing: border-box;
                 overflow: hidden;
                 position: relative;
             ">
+                ${fogHTML}
+                ${lightRays}
+
                 <div style="
                     position: relative;
-                    height: clamp(130px, 20vh, 160px);
-                    background: linear-gradient(180deg, rgba(28, 23, 20, 0.05) 30%, rgba(28, 23, 20, 0.92) 70%, rgba(28, 23, 20, 1) 100%), 
+                    height: clamp(120px, 18vh, 150px);
+                    background: linear-gradient(180deg, rgba(16, 14, 12, 0.1) 20%, rgba(16, 14, 12, 0.85) 70%, rgba(16, 14, 12, 1) 100%), 
                                 url('./assets/images/ForestUI.png') center/cover no-repeat;
                     display: flex; flex-direction: column; justify-content: space-between;
-                    padding: 14px 18px;
+                    padding: 12px 18px;
                     box-sizing: border-box;
                     flex-shrink: 0;
+                    z-index: 1;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1;">
                         <button id="forest-btn-close" style="
-                            background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                            background: rgba(8, 6, 4, 0.7); backdrop-filter: blur(6px);
                             -webkit-backdrop-filter: blur(6px);
-                            border: 1px solid rgba(52, 211, 153, 0.2); color: #34d399;
-                            padding: 5px 14px; border-radius: 20px; cursor: pointer;
-                            font-size: 11px; font-weight: 600; transition: all 0.2s;
+                            border: 1px solid rgba(52, 211, 153, 0.12); color: #6b8a7a;
+                            padding: 4px 14px; border-radius: 20px; cursor: pointer;
+                            font-size: 11px; font-weight: 400; transition: all 0.2s;
                             display: flex; align-items: center; gap: 4px;
-                            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-                        ">⬅ 離開森林</button>
+                        "
+                        onmouseover="this.style.borderColor='rgba(52,211,153,0.3)'; this.style.color='#34d399';"
+                        onmouseout="this.style.borderColor='rgba(52,211,153,0.12)'; this.style.color='#6b8a7a';"
+                        >⬅ 離開</button>
 
                         <div class="explore-counter" style="
-                            background: rgba(18, 16, 14, 0.7); backdrop-filter: blur(6px);
+                            background: rgba(8, 6, 4, 0.7); backdrop-filter: blur(6px);
                             -webkit-backdrop-filter: blur(6px);
                             padding: 3px 14px;
                             border-radius: 16px;
-                            border: 1px solid rgba(52, 211, 153, 0.25);
+                            border: 1px solid rgba(52, 211, 153, 0.15);
                             font-size: 11px;
-                            font-weight: 600;
+                            font-weight: 500;
                             color: #34d399;
-                            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
                             display: flex;
                             align-items: center; gap: 6px;
                         ">
                             <span>🌲</span>
-                            <span>探索次數: <strong style="font-size: 15px;">${this.remainingExplores}</strong></span>
+                            <span>剩餘 <strong style="font-size: 15px; color: #5ee0a4;">${this.remainingExplores}</strong> 次</span>
                         </div>
                     </div>
 
                     <div style="z-index: 1;">
-                        <div style="font-size: 9px; font-weight: 500; color: #34d399; letter-spacing: 1.2px; margin-bottom: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
+                        <div style="font-size: 9px; font-weight: 400; color: #4a8a6a; letter-spacing: 1.5px; margin-bottom: 1px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
                             WHISPERS OF THE FOREST
                         </div>
-                        <div style="font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 8px;">
-                            🌲 呢喃迷霧森林
-                            <span style="font-size: 10px; font-weight: 300; color: #8a7a5a; text-shadow: none;">· 探索未知</span>
+                        <div style="font-size: 16px; font-weight: 600; color: #e8e4de; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 8px;">
+                            🌲 迷霧森林
+                            <span style="font-size: 10px; font-weight: 300; color: #5a6a5a; text-shadow: none;">· 探索未知</span>
                         </div>
                     </div>
-
-                    <div class="forest-fog" style="
-                        position: absolute; bottom: 0; left: -20%; right: -20%; height: 60px;
-                        background: linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.04) 50%, rgba(52, 211, 153, 0.08) 100%);
-                        pointer-events: none; border-radius: 50%;
-                        filter: blur(20px);
-                    "></div>
-                    <div class="forest-fog-2" style="
-                        position: absolute; bottom: 10px; left: -30%; right: -30%; height: 40px;
-                        background: linear-gradient(180deg, transparent 0%, rgba(52, 211, 153, 0.03) 50%, rgba(52, 211, 153, 0.06) 100%);
-                        pointer-events: none; border-radius: 50%;
-                        filter: blur(30px);
-                    "></div>
                 </div>
 
                 <div id="forest-content-area" style="
-                    flex: 1; padding: 16px 18px; overflow-y: auto; display: flex;
-                    flex-direction: column; gap: 12px; background: rgba(20, 16, 13, 0.6);
+                    flex: 1; padding: 12px 18px 16px 18px; overflow-y: auto; display: flex;
+                    flex-direction: column; gap: 10px; background: rgba(8, 6, 4, 0.4);
+                    z-index: 1;
                 ">
                     ${this.renderContent()}
                 </div>
@@ -300,155 +530,114 @@ export class ForestExplorerUI {
 
         document.body.appendChild(this.overlayContainer);
         this.bindEvents();
+        
+        // 初始化 Canvas（需要等待 DOM 渲染完成）
+        setTimeout(() => {
+            this.initCanvas();
+        }, 100);
+        
         setTimeout(() => this.createLeafEffect(), 300);
     }
 
     private renderContent(): string {
-        // ✅ 如果探索次數為 0，顯示結束畫面
         if (this.remainingExplores === 0) {
             const totalRewards = this.calculateTotalRewards();
             return `
                 <div style="
                     flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
-                    text-align: center; gap: 14px;
+                    text-align: center; gap: 10px; padding: 10px 0;
                 ">
-                    <div style="font-size: 56px; animation: eventReveal 0.6s ease forwards;">🌲</div>
-                    <div style="font-size: 20px; font-weight: 700; color: #fff;">今日探索已結束</div>
-                    <div style="font-size: 13px; color: #a89f91; line-height: 1.8; max-width: 320px;">
-                        你已經探索了迷霧森林的所有角落。<br>
-                        帶著滿滿的收穫，準備返回小鎮吧！
+                    <div style="font-size: 48px; animation: eventReveal 0.6s ease forwards;">🏕️</div>
+                    <div style="font-size: 18px; font-weight: 600; color: #e8e4de;">本次探索已結束</div>
+                    <div style="font-size: 12px; color: #7a8a7a; line-height: 1.6; max-width: 300px;">
+                        你已穿越迷霧森林的所有小徑<br>
+                        帶著收穫，準備返回小鎮吧
                     </div>
-                    <div style="
-                        background: rgba(0,0,0,0.3); border-radius: 12px; padding: 14px 16px;
-                        width: 100%; text-align: left;
-                        border: 1px solid rgba(52, 211, 153, 0.06);
-                        max-height: 220px; overflow-y: auto;
-                    ">
-                        <div style="font-weight: 600; color: #34d399; margin-bottom: 8px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-                            📜 探索紀錄
-                            <span style="font-size: 10px; color: #6b635b; font-weight: 400;">（共 ${this.exploreHistory.length} 次）</span>
+                    ${totalRewards.length > 0 ? `
+                        <div style="
+                            background: rgba(52, 211, 153, 0.04);
+                            border: 1px solid rgba(52, 211, 153, 0.06);
+                            border-radius: 10px; padding: 6px 14px;
+                            display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+                        ">
+                            ${totalRewards.map(r => `
+                                <span style="color: #8aaa8a; font-size: 11px;">${r}</span>
+                            `).join('')}
                         </div>
-                        ${this.exploreHistory.map((h, index) => `
-                            <div style="
-                                padding: 3px 0; 
-                                border-bottom: 1px solid rgba(255,255,255,0.03);
-                                font-size: 11px; color: ${index === this.exploreHistory.length - 1 ? '#d4c9b8' : '#8a7a5a'};
-                                display: flex; align-items: center; gap: 4px;
-                                ${index === this.exploreHistory.length - 1 ? 'font-weight: 500;' : ''}
-                            ">
-                                ${index === this.exploreHistory.length - 1 ? '🔄 ' : '  '}${h}
-                            </div>
-                        `).join('')}
-                        ${totalRewards.length > 0 ? `
-                            <div style="
-                                margin-top: 10px; padding-top: 8px;
-                                border-top: 1px solid rgba(52, 211, 153, 0.1);
-                            ">
-                                <div style="font-size: 10px; color: #8a7a5a; margin-bottom: 4px;">🎁 本次探索總收穫</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                    ${totalRewards.map(r => `
-                                        <span style="
-                                            background: rgba(52, 211, 153, 0.06);
-                                            border: 1px solid rgba(52, 211, 153, 0.08);
-                                            border-radius: 6px; padding: 2px 10px;
-                                            font-size: 10px; color: #d4c9b8;
-                                        ">${r}</span>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
+                    ` : ''}
                     <button id="forest-btn-leave" style="
-                        width: 100%; padding: 13px;
-                        background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
-                        border: 1px solid rgba(52, 211, 153, 0.25);
+                        width: 100%; max-width: 280px; padding: 12px;
+                        background: linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%);
+                        border: 1px solid rgba(52, 211, 153, 0.2);
                         border-radius: 12px; color: #34d399;
-                        font-size: 13px; font-weight: 600; cursor: pointer;
+                        font-size: 14px; font-weight: 500; cursor: pointer;
                         transition: all 0.2s;
-                    ">🚪 返回小鎮</button>
+                        letter-spacing: 0.5px;
+                    "
+                    onmouseover="this.style.borderColor='rgba(52,211,153,0.4)'; this.style.background='rgba(52,211,153,0.08)';"
+                    onmouseout="this.style.borderColor='rgba(52,211,153,0.2)'; this.style.background='linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(16,185,129,0.05) 100%)';"
+                    >🚪 返回小鎮</button>
                 </div>
             `;
         }
 
-        // ✅ 還有探索次數時顯示主畫面
         return `
             <div style="
-                text-align: center; padding: 4px 0 2px 0;
-                font-size: 12px; color: #6b635b; letter-spacing: 0.8px;
+                text-align: center; font-size: 11px; color: #4a5a4a; letter-spacing: 0.5px;
+                padding-bottom: 2px;
             ">
-                ✦ 輕觸下方按鈕探索迷霧森林 ✦
+                ✦ 迷霧深處藏著什麼呢 ✦
             </div>
+
+            <canvas id="forest-path" class="forest-path-canvas" height="120"></canvas>
+
             <button id="forest-btn-explore" class="forest-explore-btn" style="
-                width: 100%; padding: 16px;
-                background: linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%);
-                border: 1px solid rgba(52, 211, 153, 0.25);
-                border-radius: 14px; color: #34d399;
-                font-size: 16px; font-weight: 700; cursor: pointer;
+                width: 100%; padding: 14px;
+                background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(16, 185, 129, 0.04) 100%);
+                border: 1px solid rgba(52, 211, 153, 0.2);
+                border-radius: 12px; color: #34d399;
+                font-size: 15px; font-weight: 600; cursor: pointer;
                 transition: all 0.3s ease;
                 display: flex; align-items: center; justify-content: center; gap: 10px;
                 position: relative;
-            ">
+                letter-spacing: 0.3px;
+            "
+            onmouseover="this.style.borderColor='rgba(52,211,153,0.4)'; this.style.background='rgba(52,211,153,0.08)';"
+            onmouseout="this.style.borderColor='rgba(52,211,153,0.2)'; this.style.background='linear-gradient(135deg, rgba(52,211,153,0.1) 0%, rgba(16,185,129,0.04) 100%)';"
+            >
                 <span>🌲</span> 探索森林深處
-                <span style="font-size: 12px; font-weight: 400; opacity: 0.6; background: rgba(52,211,153,0.05); padding: 0 10px; border-radius: 10px;">
-                    剩餘 ${this.remainingExplores} 次
+                <span style="font-size: 11px; font-weight: 400; opacity: 0.5; background: rgba(52,211,153,0.04); padding: 2px 12px; border-radius: 10px;">
+                    剩 ${this.remainingExplores} 次
                 </span>
             </button>
 
             ${this.exploreHistory.length > 0 ? `
                 <div style="
-                    background: rgba(0,0,0,0.15); border-radius: 10px; padding: 10px 12px;
-                    max-height: 160px; overflow-y: auto;
+                    background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px 12px;
+                    max-height: 100px; overflow-y: auto;
                     border: 1px solid rgba(255,255,255,0.02);
                 ">
-                    <div style="font-size: 10px; color: #6b635b; margin-bottom: 4px; letter-spacing: 0.5px;">📜 探索紀錄</div>
-                    ${this.exploreHistory.map(h => `
-                        <div style="font-size: 11px; color: #a89f91; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.02);">
+                    <div style="font-size: 9px; color: #4a5a4a; margin-bottom: 4px; letter-spacing: 0.5px;">📜 探索紀錄</div>
+                    ${this.exploreHistory.slice(-4).map((h, index) => `
+                        <div style="
+                            font-size: 10px; color: ${index === this.exploreHistory.length - 1 ? '#8aaa8a' : '#5a6a5a'}; 
+                            padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.02);
+                            display: flex; align-items: center; gap: 4px;
+                        ">
+                            <span style="opacity: 0.3;">${index === this.exploreHistory.length - 1 ? '▶' : '·'}</span>
                             ${h}
                         </div>
                     `).join('')}
                 </div>
             ` : `
                 <div style="
-                    text-align: center; color: #6b635b; font-size: 11px; padding: 12px 0;
-                    letter-spacing: 0.5px; font-style: italic;
+                    text-align: center; color: #3a4a3a; font-size: 10px; padding: 6px 0;
+                    letter-spacing: 0.3px; font-style: italic;
                 ">
-                    🌿 迷霧深處藏著未知的驚喜...
+                    🌿 輕觸按鈕，踏入迷霧之中...
                 </div>
             `}
         `;
-    }
-
-    private calculateTotalRewards(): string[] {
-        const rewards: { [key: string]: number } = {};
-        for (const record of this.exploreHistory) {
-            const coinMatch = record.match(/☀️ 獲得 (\d+) 暖陽幣/);
-            if (coinMatch) {
-                const amount = parseInt(coinMatch[1]);
-                rewards['☀️ 暖陽幣'] = (rewards['☀️ 暖陽幣'] || 0) + amount;
-            }
-            const tokenMatch = record.match(/🌟 獲得 (\d+) 紀念代幣/);
-            if (tokenMatch) {
-                const amount = parseInt(tokenMatch[1]);
-                rewards['🌟 紀念代幣'] = (rewards['🌟 紀念代幣'] || 0) + amount;
-            }
-            for (const itemId in ITEM_DATABASE) {
-                const item = ITEM_DATABASE[itemId];
-                const pattern = new RegExp(`獲得 ${item.name} x(\\d+)`);
-                const match = record.match(pattern);
-                if (match) {
-                    const count = parseInt(match[1]);
-                    const key = `${item.icon} ${item.name}`;
-                    rewards[key] = (rewards[key] || 0) + count;
-                }
-            }
-        }
-        const result: string[] = [];
-        for (const [key, count] of Object.entries(rewards)) {
-            if (count > 0) {
-                result.push(`${key} x${count}`);
-            }
-        }
-        return result;
     }
 
     private bindEvents() {
@@ -468,36 +657,37 @@ export class ForestExplorerUI {
         }
     }
 
-    // ✅ 直接進行探索（不回到主畫面）
-    private async doExplore() {
+    private async handleExplore() {
         if (this.isExploring || this.remainingExplores <= 0) return;
         this.isExploring = true;
 
-        // 顯示載入狀態
         const btn = document.getElementById('forest-btn-explore');
         if (btn) {
             btn.classList.add('loading');
             btn.textContent = '🌿 探索中...';
         }
 
-        // ✅ 更新右上角次數（探索開始時就先減1並更新）
+        // 先減探索次數
         this.remainingExplores -= 1;
         this.updateCounter();
-
         this.createLeafEffect();
-        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 500));
 
+        // 等待效果
+        await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 400));
+
+        // 生成事件
         const event = this.generateEvent();
         await this.applyRewards(event);
 
+        // 記錄歷史
         let historyText = `${event.icon} ${event.name}：${event.description}`;
         if (event.isSuccess && event.rewards.length > 0) {
             const rewardTexts = event.rewards.map(r => {
-                if (r.sunCoins) return `☀️ 獲得 ${r.sunCoins} 暖陽幣`;
-                if (r.memorialTokens) return `🌟 獲得 ${r.memorialTokens} 紀念代幣`;
+                if (r.sunCoins) return `☀️ +${r.sunCoins}`;
+                if (r.memorialTokens) return `🌟 +${r.memorialTokens}`;
                 if (r.itemId) {
                     const item = ITEM_DATABASE[r.itemId];
-                    return `獲得 ${item?.name || r.itemId} x${r.count || 1}`;
+                    return `🎁 ${item?.name || r.itemId} x${r.count || 1}`;
                 }
                 return '';
             }).filter(t => t).join('、');
@@ -507,161 +697,86 @@ export class ForestExplorerUI {
         }
         this.exploreHistory.push(historyText);
 
-        const contentArea = document.getElementById('forest-content-area');
-        if (contentArea) {
-            // ✅ 如果還有剩餘次數，顯示結果 + 繼續探索按鈕（直接觸發下一次探索）
-            if (this.remainingExplores > 0) {
-                contentArea.innerHTML = `
-                    <div class="forest-event-card" style="
-                        flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
-                        text-align: center; gap: 12px; padding: 10px;
-                    ">
-                        <div style="font-size: 56px;">${event.icon}</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #fff;">
-                            ${event.isSuccess ? '✨' : '🌫️'} ${event.name}
-                        </div>
-                        <div style="font-size: 13px; color: #a89f91; line-height: 1.6; max-width: 300px;">
-                            ${event.description}
-                        </div>
-                        ${event.isSuccess && event.rewards.length > 0 ? `
-                            <div style="
-                                background: rgba(52, 211, 153, 0.06);
-                                border: 1px solid rgba(52, 211, 153, 0.1);
-                                border-radius: 10px; padding: 10px 16px; width: 100%;
-                            ">
-                                ${event.rewards.map(r => {
-                                    if (r.sunCoins) return `<div style="color: #fde047;">☀️ 獲得 ${r.sunCoins} 暖陽幣</div>`;
-                                    if (r.memorialTokens) return `<div style="color: #d8b4fe;">🌟 獲得 ${r.memorialTokens} 紀念代幣</div>`;
-                                    if (r.itemId) {
-                                        const item = ITEM_DATABASE[r.itemId];
-                                        return `<div style="color: #34d399;">🎁 獲得 ${item?.name || r.itemId} x${r.count || 1}</div>`;
-                                    }
-                                    return '';
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                        <button id="forest-btn-continue" class="forest-continue-btn" style="
-                            width: 100%; padding: 12px;
-                            background: rgba(52, 211, 153, 0.08);
-                            border: 1px solid rgba(52, 211, 153, 0.15);
-                            border-radius: 12px; color: #34d399;
-                            font-size: 14px; font-weight: 600; cursor: pointer;
-                            transition: all 0.2s;
-                        ">
-                            🌲 繼續探索 (剩餘 ${this.remainingExplores} 次)
-                        </button>
-                    </div>
-                `;
-                const continueBtn = document.getElementById('forest-btn-continue');
-                if (continueBtn) {
-                    continueBtn.onclick = () => {
-                        // ✅ 直接進行下一次探索，不需回到主畫面
-                        this.doExplore();
-                    };
-                }
-            } else {
-                // ✅ 所有探索完成，顯示結束畫面
-                const totalRewards = this.calculateTotalRewards();
-                contentArea.innerHTML = `
-                    <div style="
-                        flex: 1; display: flex; flex-direction: column;
-                        text-align: center; gap: 12px; padding: 10px;
-                        overflow-y: auto;
-                    ">
-                        <div class="forest-event-card" style="
-                            display: flex; flex-direction: column; align-items: center; gap: 8px;
-                            padding: 16px; background: rgba(52, 211, 153, 0.04);
-                            border-radius: 14px; border: 1px solid rgba(52, 211, 153, 0.08);
-                        ">
-                            <div style="font-size: 44px;">${event.icon}</div>
-                            <div style="font-size: 18px; font-weight: 700; color: #fff;">
-                                ${event.isSuccess ? '✨' : '🌫️'} ${event.name}
-                            </div>
-                            <div style="font-size: 12px; color: #a89f91; line-height: 1.5;">
-                                ${event.description}
-                            </div>
-                            ${event.isSuccess && event.rewards.length > 0 ? `
-                                <div style="
-                                    background: rgba(52, 211, 153, 0.06);
-                                    border: 1px solid rgba(52, 211, 153, 0.1);
-                                    border-radius: 8px; padding: 8px 14px; width: 100%;
-                                ">
-                                    ${event.rewards.map(r => {
-                                        if (r.sunCoins) return `<div style="color: #fde047; font-size: 12px;">☀️ 獲得 ${r.sunCoins} 暖陽幣</div>`;
-                                        if (r.memorialTokens) return `<div style="color: #d8b4fe; font-size: 12px;">🌟 獲得 ${r.memorialTokens} 紀念代幣</div>`;
-                                        if (r.itemId) {
-                                            const item = ITEM_DATABASE[r.itemId];
-                                            return `<div style="color: #34d399; font-size: 12px;">🎁 獲得 ${item?.name || r.itemId} x${r.count || 1}</div>`;
-                                        }
-                                        return '';
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <div style="
-                            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px 14px;
-                            text-align: left; border: 1px solid rgba(52, 211, 153, 0.06);
-                            max-height: 200px; overflow-y: auto;
-                        ">
-                            <div style="font-weight: 600; color: #34d399; margin-bottom: 6px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
-                                📜 探索紀錄
-                                <span style="font-size: 10px; color: #6b635b; font-weight: 400;">（共 ${this.exploreHistory.length} 次）</span>
-                            </div>
-                            ${this.exploreHistory.map((h, index) => `
-                                <div style="
-                                    padding: 2px 0; 
-                                    border-bottom: 1px solid rgba(255,255,255,0.02);
-                                    font-size: 10px; color: ${index === this.exploreHistory.length - 1 ? '#d4c9b8' : '#8a7a5a'};
-                                    display: flex; align-items: center; gap: 4px;
-                                    ${index === this.exploreHistory.length - 1 ? 'font-weight: 500;' : ''}
-                                ">
-                                    ${index === this.exploreHistory.length - 1 ? '🔄 ' : '  '}${h}
-                                </div>
-                            `).join('')}
-                            ${totalRewards.length > 0 ? `
-                                <div style="
-                                    margin-top: 8px; padding-top: 6px;
-                                    border-top: 1px solid rgba(52, 211, 153, 0.1);
-                                ">
-                                    <div style="font-size: 9px; color: #8a7a5a; margin-bottom: 4px;">🎁 本次探索總收穫</div>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                        ${totalRewards.map(r => `
-                                            <span style="
-                                                background: rgba(52, 211, 153, 0.06);
-                                                border: 1px solid rgba(52, 211, 153, 0.08);
-                                                border-radius: 4px; padding: 2px 10px;
-                                                font-size: 9px; color: #d4c9b8;
-                                            ">${r}</span>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-
-                        <button id="forest-btn-leave" style="
-                            width: 100%; padding: 13px;
-                            background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
-                            border: 1px solid rgba(52, 211, 153, 0.25);
-                            border-radius: 12px; color: #34d399;
-                            font-size: 14px; font-weight: 600; cursor: pointer;
-                            transition: all 0.2s;
-                        ">🚪 返回小鎮</button>
-                    </div>
-                `;
-                const leaveBtn = document.getElementById('forest-btn-leave');
-                if (leaveBtn) {
-                    leaveBtn.onclick = () => this.handleClose();
-                }
-            }
-        }
+        // 更新進度
+        this.explorationProgress = (5 - this.remainingExplores) / 5;
 
         this.isExploring = false;
+
+        // ✅ 關鍵：重新渲染整個 UI（而不是只更新 contentArea）
+        // 這樣 Canvas 會重新創建，計數器也會正確更新
+        this.render();
+        
+        // ✅ 如果還有剩餘次數，自動顯示事件結果提示（但不阻擋繼續探索）
+        if (this.remainingExplores > 0) {
+            // 在重新渲染後，在 contentArea 頂部顯示一個小提示
+            this.showEventResult(event);
+        } else {
+            // 所有探索完成，顯示完成畫面（已經由 render 處理）
+        }
     }
 
-    private async handleExplore() {
-        // ✅ 直接呼叫 doExplore
-        await this.doExplore();
+    // ✅ 在 Canvas 上方顯示事件結果的浮動提示
+    private showEventResult(event: ForestEvent) {
+        const contentArea = document.getElementById('forest-content-area');
+        if (!contentArea) return;
+
+        // 移除舊的提示
+        const oldTip = document.getElementById('event-result-tip');
+        if (oldTip) oldTip.remove();
+
+        const tip = document.createElement('div');
+        tip.id = 'event-result-tip';
+        tip.style.cssText = `
+            background: rgba(52, 211, 153, 0.04);
+            border: 1px solid rgba(52, 211, 153, 0.08);
+            border-radius: 10px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: eventReveal 0.3s ease forwards;
+            margin-bottom: 4px;
+        `;
+        tip.innerHTML = `
+            <span style="font-size: 20px;">${event.icon}</span>
+            <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 500; color: #e8e4de;">
+                    ${event.isSuccess ? '✨' : '🌫️'} ${event.name}
+                </div>
+                <div style="font-size: 10px; color: #8a9a8a;">${event.description}</div>
+            </div>
+            ${event.isSuccess && event.rewards.length > 0 ? `
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    ${event.rewards.map(r => {
+                        if (r.sunCoins) return `<span style="color: #fde047; font-size: 11px;">☀️+${r.sunCoins}</span>`;
+                        if (r.memorialTokens) return `<span style="color: #d8b4fe; font-size: 11px;">🌟+${r.memorialTokens}</span>`;
+                        if (r.itemId) {
+                            const item = ITEM_DATABASE[r.itemId];
+                            return `<span style="color: #34d399; font-size: 11px;">🎁+${r.count || 1}</span>`;
+                        }
+                        return '';
+                    }).join('')}
+                </div>
+            ` : ''}
+        `;
+
+        // 插入到 contentArea 的最前面（在 canvas 之前）
+        const firstChild = contentArea.firstChild;
+        if (firstChild) {
+            contentArea.insertBefore(tip, firstChild);
+        } else {
+            contentArea.appendChild(tip);
+        }
+
+        // 3.5 秒後淡出移除
+        setTimeout(() => {
+            tip.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            tip.style.opacity = '0';
+            tip.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                if (tip.parentNode) tip.remove();
+            }, 500);
+        }, 3500);
     }
 
     private generateEvent(): ForestEvent {
@@ -687,7 +802,7 @@ export class ForestExplorerUI {
                 id: 'herbs',
                 name: '發現藥草',
                 icon: '🌿',
-                description: `在樹蔭下發現了散發清香的${herbNames[selected.itemId] || '藥草'}，小心翼翼地採集起來。`,
+                description: `在樹蔭下發現了${herbNames[selected.itemId] || '藥草'}`,
                 rewards: [selected],
                 isSuccess: true
             };
@@ -699,7 +814,7 @@ export class ForestExplorerUI {
                 id: 'mushroom',
                 name: '採集蘑菇',
                 icon: '🍄',
-                description: '在潮濕的樹根旁發現了一叢螢光小蘑菇，散發著柔和的光芒。',
+                description: '在樹根旁發現一叢螢光小蘑菇',
                 rewards: [{ itemId: 'item_30', count: mushroomCount }],
                 isSuccess: true
             };
@@ -711,7 +826,7 @@ export class ForestExplorerUI {
                 id: 'chest',
                 name: '發現寶箱',
                 icon: '💎',
-                description: '在藤蔓覆蓋的樹洞中發現了一個古老的寶箱！',
+                description: '在藤蔓覆蓋的樹洞中找到古老寶箱！',
                 rewards: [{ sunCoins: coinAmount }],
                 isSuccess: true
             };
@@ -723,7 +838,7 @@ export class ForestExplorerUI {
                 id: 'spirit',
                 name: '遇見森林精靈',
                 icon: '🦌',
-                description: '一道柔和的光芒閃過，一隻優雅的森林精靈出現在你面前，賜予你祝福。',
+                description: '森林精靈賜予你祝福',
                 rewards: [{ memorialTokens: tokenAmount }],
                 isSuccess: true
             };
@@ -740,8 +855,8 @@ export class ForestExplorerUI {
             const selected = relicOptions[Math.floor(Math.random() * relicOptions.length)];
             const relicNames: { [key: string]: string } = {
                 'item_41': '記憶拼圖碎片',
-                'item_43': '泛黃的舊地圖',
-                'item_42': '舊時代的火車票',
+                'item_43': '泛黃舊地圖',
+                'item_42': '舊時代火車票',
                 'item_44': '黃銅鑰匙',
                 'item_49': '詩集殘頁'
             };
@@ -749,7 +864,7 @@ export class ForestExplorerUI {
                 id: 'ruins',
                 name: '發現古老遺跡',
                 icon: '📜',
-                description: `撥開厚重的藤蔓，一座被遺忘的古老石碑出現在眼前，你發現了${relicNames[selected.itemId] || '古老遺物'}。`,
+                description: `發現${relicNames[selected.itemId] || '古老遺物'}`,
                 rewards: [selected],
                 isSuccess: true
             };
@@ -775,7 +890,7 @@ export class ForestExplorerUI {
                 id: 'special',
                 name: '發現稀有材料',
                 icon: '✨',
-                description: `在森林深處的隱秘角落，你發現了閃耀著微光的${specialNames[selected.itemId] || '稀有材料'}！`,
+                description: `發現${specialNames[selected.itemId] || '稀有材料'}！`,
                 rewards: [selected],
                 isSuccess: true
             };
@@ -785,7 +900,7 @@ export class ForestExplorerUI {
             id: 'lost',
             name: '迷霧迷失',
             icon: '🌫️',
-            description: '濃霧突然襲來，你迷失了方向，花費了許多時間才找到路...',
+            description: '濃霧襲來，迷失了方向...',
             rewards: [],
             isSuccess: false
         };
@@ -832,29 +947,37 @@ export class ForestExplorerUI {
         }
     }
 
-    private showToast(message: string) {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
-            background: rgba(28, 23, 20, 0.95);
-            border: 2px solid rgba(52, 211, 153, 0.3);
-            color: #f3f0ea; padding: 14px 24px; border-radius: 14px;
-            font-size: 13px; font-weight: 500; text-align: center;
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
-            z-index: 9999; backdrop-filter: blur(12px);
-            max-width: 80vw; box-sizing: border-box;
-            line-height: 1.6;
-            animation: toastFadeInTop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            white-space: pre-line;
-        `;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.4s ease';
-            setTimeout(() => toast.remove(), 400);
-        }, 2500);
+    private calculateTotalRewards(): string[] {
+        const rewards: { [key: string]: number } = {};
+        for (const record of this.exploreHistory) {
+            const coinMatch = record.match(/☀️ \+(\d+)/);
+            if (coinMatch) {
+                const amount = parseInt(coinMatch[1]);
+                rewards['☀️ 暖陽幣'] = (rewards['☀️ 暖陽幣'] || 0) + amount;
+            }
+            const tokenMatch = record.match(/🌟 \+(\d+)/);
+            if (tokenMatch) {
+                const amount = parseInt(tokenMatch[1]);
+                rewards['🌟 紀念代幣'] = (rewards['🌟 紀念代幣'] || 0) + amount;
+            }
+            for (const itemId in ITEM_DATABASE) {
+                const item = ITEM_DATABASE[itemId];
+                const pattern = new RegExp(`🎁 ${item.name} x(\\d+)`);
+                const match = record.match(pattern);
+                if (match) {
+                    const count = parseInt(match[1]);
+                    const key = `${item.icon} ${item.name}`;
+                    rewards[key] = (rewards[key] || 0) + count;
+                }
+            }
+        }
+        const result: string[] = [];
+        for (const [key, count] of Object.entries(rewards)) {
+            if (count > 0) {
+                result.push(`${key} x${count}`);
+            }
+        }
+        return result;
     }
 
     private handleClose() {
@@ -870,6 +993,10 @@ export class ForestExplorerUI {
     }
 
     public remove() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
         this.removeOverlay();
         this.onClose();
     }
